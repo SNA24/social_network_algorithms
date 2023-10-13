@@ -1,1 +1,1 @@
-# Midterm
+# Social Network Analysis Algorithms
