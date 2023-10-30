@@ -1,6 +1,6 @@
 import networkx as nx
 from priorityq import PriorityQueue
-from lesson3 import betweenness
+from clustering import betweenness
 
 #CENTRALITY MEASURES
 #Returns the top k nodes of G according to the centrality measure "measure"
