@@ -1,5 +1,6 @@
 import networkx as nx
 from priorityq import PriorityQueue
+from math import exp
 
 #CENTRALITY MEASURES
 #Returns the top k nodes of G according to the centrality measure "measure"
@@ -13,16 +14,35 @@ def top(G,measure,k):
         out.append(pq.pop())
     return out
 
-def function(degree):
+def inverse(degree):
     """
     # INPUT
     - degree: degree of a node
     # OUTPUT
     - f(degree) = 1/degree
     """
-    if degree == 0:
-        return 1
     return 1/degree
+
+
+def exponential_decay(degree, lambda_value=0.1):
+    """
+    # INPUT
+    - degree: degree of a node
+    - lambda_value: decay rate
+    # OUTPUT
+    - f(degree) = e^(-lambda_value*degree)
+    """
+    return exp(-lambda_value*degree)
+
+def power_law(degree, alpha=0.1):
+    """
+    # INPUT
+    - degree: degree of a node
+    - alpha: power law exponent
+    # OUTPUT
+    - f(degree) = degree^(-alpha)
+    """
+    return degree**(-alpha)
 
 def shapleycloseness(G):
     """ 
@@ -37,9 +57,8 @@ def shapleycloseness(G):
     for v in G.nodes():
 
         distances = nx.single_source_dijkstra_path_length(G, v)
-        nodes_sorted_by_distance = sorted(distances.keys(), key=lambda node: distances[node])
-        w = [i for i in nodes_sorted_by_distance]
-        D = [distances[i] for i in nodes_sorted_by_distance]
+        w = list(distances.keys())
+        D = list(distances.values())
 
         sum = 0
         index = len(G.nodes())-1
@@ -50,14 +69,15 @@ def shapleycloseness(G):
             if D[index] == prevDistance:
                 currSV = prevSV
             else:
-                currSV = function(D[index])/(1+index) - sum
+                currSV = exponential_decay(D[index])/(1+index) - sum
             SV[w[index]] += currSV
-            sum += function(D[index])/(index*(1+index))
+            sum += exponential_decay(D[index])/(index*(1+index))
             prevDistance = D[index]
             prevSV = currSV
             index -= 1
         
-        SV[v] += function(0) - sum
+        if D[0] != 0:
+            SV[v] += exponential_decay(0) - sum
 
     return SV
 
