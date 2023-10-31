@@ -2,6 +2,8 @@ from matplotlib import pyplot as plt
 from priorityq import PriorityQueue
 import networkx as nx
 import random
+from scipy.sparse import linalg
+
 
 #For direct and undirect graphs
 def hierarchical(G):
@@ -47,9 +49,8 @@ def hierarchical(G):
 
     return clusters
 
-import networkx as nx
-import random
 
+#two means directed and undirected networks
 def two_means(G, directed=False):
     n = G.number_of_nodes()
 
@@ -95,6 +96,52 @@ def two_means(G, directed=False):
 
     return cluster0, cluster1
 
+#Spectral for directed and undirected networks
+def spectral(G,directed=False):
+    n = G.number_of_nodes()
+    nodes = sorted(G.nodes())
+    # Laplacian of a graph is a matrix, with diagonal entries being the degree of the corresponding node
+    # and off-diagonal entries being -1 if an edge between the corresponding nodes exists and 0 otherwise
+    if directed:
+        L=nx.directed_laplacian_matrix(G, nodes).astype('f')
+        #print(L)
+    else:
+        L=nx.laplacian_matrix(G, nodes).astype('f')
+        #print(L) #To see the laplacian of G uncomment this line
+    # The following command computes eigenvalues and eigenvectors of the Laplacian matrix.
+    # Recall that these are scalar numbers w_1, ..., w_k and vectors v_1, ..., v_k such that Lv_i=w_iv_i.
+    # The first output is the array of eigenvalues in increasing order.
+    # The second output contains the matrix of eigenvectors:
+    # specifically, the eigenvector of the k-th eigenvalue is given by the k-th column of v
+    w, v = linalg.eigsh(L,n-1)
+    # print(w) #Print the list of eigenvalues
+    # print(v) #Print the matrix of eigenvectors
+    # print(v[:,0]) #Print the eigenvector corresponding to the first returned eigenvalue
+
+    # Partition in clusters based on the corresponding eigenvector value being positive or negative
+    # This is known to return (an approximation of) the sparset cut of the graph
+    # That is, the cut with each of the clusters having many edges, and with few edge among clusters
+    # Note that this is not the minimum cut (that only requires few edge among clusters,
+    # but it does not require many edge within clusters)
+    c1 = set()
+    c2 = set()
+
+    for i in range(n):
+        if v[i,0] < 0:
+            c1.add(nodes[i])
+        else:
+            c2.add(nodes[i])
+
+    # How to achieve more than two clusters? Two options:
+    # (i) for each subgraph corresponding to one of the clusters, we can split this subgraph by running the spectral algorithm on it;
+    # (ii) we can use further eigenvectors. For example, we can partition nodes in four clusters by using the first two eigenvectors,
+    #     so that the first (second, respectively) cluster contains those nodes i such that v[i,0] and v[i,1] are both negative (both non-negative, resp.)
+    #     while the third (fourth, respectively) cluster contains those nodes i such that only v[i,0] (only v[i,1], resp.) is negative.
+    return (c1, c2)
+
+
+
+
 
 if __name__ == '__main__':
     G = nx.DiGraph()
@@ -112,7 +159,9 @@ if __name__ == '__main__':
     print(hierarchical(G))
     print("Two Means")
     print(two_means(G,directed=True))
-    
+
+    print("Spectral")
+    print(spectral(G, directed=True))
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
     nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10)
