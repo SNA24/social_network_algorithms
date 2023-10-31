@@ -146,27 +146,26 @@ def two_means_v2(G,u,directed=False):
     return cluster0, cluster1
 
 
-
-
 def parallel_two_means(G,j,directed= False):
 
     results = []
-    u = []
+    '''u = []
     for i in range(j):
-        u.append(random.choice(list(G.nodes())))
-
-    with Parallel (n_jobs = j) as parallel:
-        results = (parallel(delayed(two_means_v2)(G,x,directed) for x in u))
+        u.append(random.choice(list(G.nodes())))'''
     
-    print(results)
+    #cerchiamo i cluster partendo da nodi diversi
+    with Parallel (n_jobs = j) as parallel:
+        starting_nodes = random.sample(list(G.nodes()), j)
+        results = (parallel(delayed(two_means_v2)(G,x,directed) for x in starting_nodes))
+    
     # Aggregates the results
     final_cluster0 = set()
     final_cluster1 = set()
+
+    #COME LI AGGREGHIAMO?
     for result in results:
-        print(result)
         c0, c1 = result
-        print(c0)
-        print(c1)
+        
         final_cluster0.update(list(c0))
         final_cluster1.update(list(c1))
 
@@ -188,7 +187,7 @@ def spectral(G,directed=False):
         #print(L)
     else:
         L=nx.laplacian_matrix(G, nodes).astype('f')
-        #print(L) #To see the laplacian of G uncomment this line
+        print(L) #To see the laplacian of G uncomment this line
     # The following command computes eigenvalues and eigenvectors of the Laplacian matrix.
     # Recall that these are scalar numbers w_1, ..., w_k and vectors v_1, ..., v_k such that Lv_i=w_iv_i.
     # The first output is the array of eigenvalues in increasing order.
@@ -221,8 +220,74 @@ def spectral(G,directed=False):
     return (c1, c2)
 
 
+#PARALLEL SPECTRAL IMPLEMENTATION
+def chunks(data, size):
+    idata=iter(data)
+    for i in range(0, len(data), size):
+        yield {k:data[k] for k in it.islice(idata, size)}
 
 
+def spectral_v2(G,directed = False, sample = None):
+    nodes = sorted(G.nodes())
+    
+    if sample is None:
+        sample = nodes
+    else:
+        sample = sorted(sample)
+        print(sample)
+
+    n = len(sample)
+    # Laplacian of a graph is a matrix, with diagonal entries being the degree of the corresponding node
+    # and off-diagonal entries being -1 if an edge between the corresponding nodes exists and 0 otherwise
+    if directed:
+        L=nx.directed_laplacian_matrix(G, sample).astype('f')
+        #print(L)
+    else:
+        L=nx.laplacian_matrix(G, sample).astype('f')
+        print(L) #To see the laplacian of G uncomment this line
+    # The following command computes eigenvalues and eigenvectors of the Laplacian matrix.
+    # Recall that these are scalar numbers w_1, ..., w_k and vectors v_1, ..., v_k such that Lv_i=w_iv_i.
+    # The first output is the array of eigenvalues in increasing order.
+    # The second output contains the matrix of eigenvectors:
+    # specifically, the eigenvector of the k-th eigenvalue is given by the k-th column of v
+    w, v = linalg.eigsh(L,n-1)
+    # print(w) #Print the list of eigenvalues
+    # print(v) #Print the matrix of eigenvectors
+    # print(v[:,0]) #Print the eigenvector corresponding to the first returned eigenvalue
+
+    # Partition in clusters based on the corresponding eigenvector value being positive or negative
+    # This is known to return (an approximation of) the sparset cut of the graph
+    # That is, the cut with each of the clusters having many edges, and with few edge among clusters
+    # Note that this is not the minimum cut (that only requires few edge among clusters,
+    # but it does not require many edge within clusters)
+    c1 = set()
+    c2 = set()
+
+    for i in range(n):
+        if v[i,0] < 0:
+            c1.add(sample[i])
+        else:
+            c2.add(sample[i])
+
+    # How to achieve more than two clusters? Two options:
+    # (i) for each subgraph corresponding to one of the clusters, we can split this subgraph by running the spectral algorithm on it;
+    # (ii) we can use further eigenvectors. For example, we can partition nodes in four clusters by using the first two eigenvectors,
+    #     so that the first (second, respectively) cluster contains those nodes i such that v[i,0] and v[i,1] are both negative (both non-negative, resp.)
+    #     while the third (fourth, respectively) cluster contains those nodes i such that only v[i,0] (only v[i,1], resp.) is negative.
+    return (c1, c2)
+
+def parallel_spectral(G,j, directed=False):
+    results =[]
+    
+    with Parallel(n_jobs=j) as parallel:
+        results = parallel(delayed(spectral_v2)(G,directed,X) for X in chunks(G.nodes(),math.ceil(len(G.nodes())/j)))
+
+    c1_final = set()
+    c2_final = set()
+    #aggregazione risultati
+    for result in results:
+        pass
+    return (c1_final,c2_final)
 
 if __name__ == '__main__':
     G = nx.DiGraph()
@@ -239,12 +304,13 @@ if __name__ == '__main__':
     print("Hierarchical")
     print(hierarchical(G))
     print("Two Means")
-    print(two_means(G,directed=True))
+    print(two_means(G,directed=True))'''
 
     print("Spectral")
-    print(spectral(G, directed=True))'''
+    print(spectral(G,directed=True))
 
-    print(parallel_two_means(G,2,directed=True))
+    #print(parallel_two_means(G,2,directed=True))
+    print(parallel_spectral(G,2,directed=True))
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
     nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10)
