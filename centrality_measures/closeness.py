@@ -18,7 +18,7 @@ def closeness(G, sample=None):
 
     cen=dict()
 
-    for u in G.nodes():
+    for u in sample:
         visited=set()
         visited.add(u)
         queue = [u]
