@@ -33,7 +33,7 @@ def diameter(G, sample=None, directed=False):
 
     return diam
 
-#PARALLEL IMPLEMENTATION
+#PARALLEL IMPLEMENTATION - CONTROLLARE PER I GRAFI DIRETTI
 #Utility used for split a vector data in chunks of the given size.
 def chunks(data, size):
     idata=iter(data)
