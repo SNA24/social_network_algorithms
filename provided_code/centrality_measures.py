@@ -249,7 +249,7 @@ if __name__ == '__main__':
     print("closeness")
     print(top(G, closeness, 3))
     print("betweenness")
-    print(top(G, btw, 3))
+    print(top(G, btw, 7))
     print("pageRank")
     print(top(G, pageRank, 3))
     print("hits")
