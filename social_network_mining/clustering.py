@@ -3,6 +3,10 @@ from priorityq import PriorityQueue
 import networkx as nx
 import random
 from scipy.sparse import linalg
+from joblib import Parallel, delayed
+import itertools as it
+import math
+
 
 
 #For direct and undirect graphs
@@ -96,6 +100,83 @@ def two_means(G, directed=False):
 
     return cluster0, cluster1
 
+
+#PARALLEL IMPLEMENTATION OF TWO MEANS ALGORITHM 
+def two_means_v2(G,u,directed=False):
+    n = G.number_of_nodes()
+
+    if directed:
+        # Per i grafi diretti, puoi utilizzare successori e predecessori
+        v = random.choice([node for node in G.nodes() if node not in G.predecessors(u) and node not in G.successors(u) and node != u]) #controllare bene 
+    else:
+        # Per i grafi non diretti, puoi utilizzare i vicini
+        v = random.choice(list(nx.non_neighbors(G, u)))
+
+    cluster0 = {u}
+    cluster1 = {v}
+    added = 2
+
+    while added < n:
+        # Scegli un nodo che non è ancora in un cluster e aggiungilo al cluster più vicino
+        candidate_nodes = [el for el in G.nodes() if el not in cluster0 | cluster1]
+
+        if directed:
+            candidate_nodes = [el for el in candidate_nodes if (len(set(G.successors(el)).intersection(cluster0)) != 0 or len(set(G.predecessors(el)).intersection(cluster0)) != 0) or (len(set(G.successors(el)).intersection(cluster1)) != 0 or len(set(G.predecessors(el)).intersection(cluster1)) != 0)]
+        else:
+            candidate_nodes = [el for el in candidate_nodes if (len(set(G.neighbors(el)).intersection(cluster0)) != 0 or len(set(G.neighbors(el)).intersection(cluster1)) != 0)]
+
+        if not candidate_nodes:
+            break
+
+        x = random.choice(candidate_nodes)
+
+        if directed:
+            if len(set(G.successors(x)).intersection(cluster0)) != 0 or len(set(G.predecessors(x)).intersection(cluster0)) != 0:
+                cluster0.add(x)
+            else:
+                cluster1.add(x)
+        else:
+            if len(set(G.neighbors(x)).intersection(cluster0)) != 0:
+                cluster0.add(x)
+            else:
+                cluster1.add(x)
+
+        added += 1
+
+    return cluster0, cluster1
+
+
+
+
+def parallel_two_means(G,j,directed= False):
+
+    results = []
+    u = []
+    for i in range(j):
+        u.append(random.choice(list(G.nodes())))
+
+    with Parallel (n_jobs = j) as parallel:
+        results = (parallel(delayed(two_means_v2)(G,x,directed) for x in u))
+    
+    print(results)
+    # Aggregates the results
+    final_cluster0 = set()
+    final_cluster1 = set()
+    for result in results:
+        print(result)
+        c0, c1 = result
+        print(c0)
+        print(c1)
+        final_cluster0.update(list(c0))
+        final_cluster1.update(list(c1))
+
+    return final_cluster0, final_cluster1
+
+
+    
+
+
+
 #Spectral for directed and undirected networks
 def spectral(G,directed=False):
     n = G.number_of_nodes()
@@ -154,14 +235,16 @@ if __name__ == '__main__':
     G.add_edge('D', 'G')
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
-    print("CLUSTERING")
+    '''print("CLUSTERING")
     print("Hierarchical")
     print(hierarchical(G))
     print("Two Means")
     print(two_means(G,directed=True))
 
     print("Spectral")
-    print(spectral(G, directed=True))
+    print(spectral(G, directed=True))'''
+
+    print(parallel_two_means(G,2,directed=True))
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
     nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10)
