@@ -2,7 +2,6 @@ import networkx as nx
 import math
 import itertools as it
 from joblib import Parallel, delayed
-import time
 
 #Utility used for split a vector data in chunks of the given size.
 def chunks(data, size):
