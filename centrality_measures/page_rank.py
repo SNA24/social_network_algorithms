@@ -8,7 +8,8 @@ from joblib import Parallel, delayed
 #step is the maximum number of steps in which the process is repeated
 #confidence is the maximum difference allowed in the rank between two consecutive step.
 #When this difference is below or equal to confidence, we assume that computation is terminated.
-def pageRank(G, s=0.85, step=75, confidence=0):
+def pageRank(G, s=0.85, step=200, confidence=0):
+
     time = 0
     n=nx.number_of_nodes(G)
     done = False
@@ -29,7 +30,10 @@ def pageRank(G, s=0.85, step=75, confidence=0):
                 # with probability s, I follow one of the link on the current page.
                 # So, if I am on page i with probability rank[i], at the next step I would be on page j at which i links
                 # with probability s*rank[i]*probability of following link (i,j) that is 1/out_degree(i)
-                tmp[v] += rank[u]/G.degree(u)
+                if nx.is_directed(G):
+                    tmp[v] += rank[u]/G.out_degree(u)
+                else:
+                    tmp[v] += rank[u]/G.degree(u)
 
         # computes the difference between the old rank and the new rank and updates rank to contain the new rank
         # difference is computed in L1 norm.
@@ -89,7 +93,7 @@ def print_graph(graph):
 # Then the page rank of a node u in the i-th partition is given by the sum of the page ranks computed by jobs that worked in blocks[*][i].
 # Note that this sum can be also be parallelized with each job executing it for different partitions.
 
-def pageRank_block(graph, s=0.85, step=75, confidence=0):
+def pageRank_block(graph, s=0.85, step=100, confidence=0):
 
     time = 0
     n = len(graph)
@@ -104,12 +108,13 @@ def pageRank_block(graph, s=0.85, step=75, confidence=0):
 
         for u in graph.keys():
             for v in graph[u]:
-                if v not in tmp.keys():
-                    tmp[v] = rank[u]/len(graph[u])
-                else:
+                if v in tmp.keys():
                     tmp[v] += rank[u]/len(graph[u])
+                else:
+                    rank[v] = float(1)/n
+                    tmp[v] = rank[u]/len(graph[u])
 
-        diff = sum(abs(rank[i]-tmp[i]) for i in graph.keys())
+        diff = sum(abs(rank[i]-tmp[i]) for i in tmp.keys())
 
         if diff <= confidence:
             done = True
@@ -118,7 +123,7 @@ def pageRank_block(graph, s=0.85, step=75, confidence=0):
 
     return rank
     
-def parallel_pageRank(G, s=0.85, step=300, confidence=0, jobs=4):
+def parallel_pageRank(G, s=0.85, step=200, confidence=0, jobs=4):
     #if the number of jobs is not a perfect square, return
     if not math.sqrt(jobs).is_integer():
         return
@@ -138,19 +143,19 @@ def parallel_pageRank(G, s=0.85, step=300, confidence=0, jobs=4):
     # the page rank of a node u in the i-th partition is given by the sum of the page ranks computed by jobs that worked in blocks[*][i]
     rank = {}
 
-    for k in range(len(result)):
-        i,j = corresponding_blocks[k]
-        for u in result[k].keys():
-            p = positions[u]
-            if j == p:
-                if u not in rank.keys():
-                    rank[u] = result[k][u]
-                else:
-                    rank[u] += result[k][u]
+    for node in G.nodes():
+        rank[node] = 0
+        part = positions[node]
+        for k in range(len(result)):
+            i,j = corresponding_blocks[k]
+            if j == part:
+                if node in result[k].keys():
+                    rank[node] += result[k][node]
 
     return rank
 
 if __name__ == '__main__':
+    print("Undirected")
     G = nx.Graph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
@@ -161,15 +166,40 @@ if __name__ == '__main__':
     G.add_edge('D', 'G')
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
+
     # print the graph
+    print("networkx")
+    nxpr = sorted(nx.pagerank(G).items(), key=lambda x: x[1], reverse=True)
+    print([x[0] for x in nxpr])
+
     print("pageRank")
-    # sort the nodes by page rank
     pr = sorted(pageRank(G).items(), key=lambda x: x[1], reverse=True)
-    # print just the keys
     print([x[0] for x in pr])
-    
-    # print("nx.pagerank")
-    # print(sorted(nx.pagerank(G).items(), key=lambda x: x[1], reverse=True))
+
+    print("parallel_pagerank")
+    ppr = sorted(parallel_pageRank(G).items(), key=lambda x: x[1], reverse=True)
+    print([x[0] for x in ppr])
+
+    print("Directed")
+    G = nx.DiGraph()
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
+
+    # print the graph
+    print("networkx")
+    nxpr = sorted(nx.pagerank(G).items(), key=lambda x: x[1], reverse=True)
+    print([x[0] for x in nxpr])
+
+    print("pageRank")
+    pr = sorted(pageRank(G).items(), key=lambda x: x[1], reverse=True)
+    print([x[0] for x in pr])
 
     print("parallel_pagerank")
     ppr = sorted(parallel_pageRank(G).items(), key=lambda x: x[1], reverse=True)
