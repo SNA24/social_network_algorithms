@@ -24,6 +24,7 @@ def num_triangles(G):
             if G.has_edge(c[0], c[1]) and G.has_edge(c[1], c[2]) and G.has_edge(c[2], c[0]):
                 num_triangles += 1
         num_triangles /= 3
+        
     for edge in G.edges():
         sel = less(G,edge)
         if edge[sel] not in heavy_hitters:
