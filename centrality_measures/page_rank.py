@@ -99,20 +99,23 @@ def pageRank_block(graph, s=0.85, step=100, confidence=0):
     n = len(graph)
     done = False
 
-    rank = {i : float(1)/n for i in graph.keys()}
+    # union of all the nodes in the graph both keys and values
+    nodes = set()
+    for i in graph.keys():
+        nodes.add(i)
+        for j in graph[i]:
+            nodes.add(j)
+
+    rank = {i : float(1)/n for i in nodes}
 
     while not done and time < step:
 
         time += 1
-        tmp = {i : float(1-s)/n for i in graph.keys()}
+        tmp = {i : float(1-s)/n for i in nodes}
 
         for u in graph.keys():
             for v in graph[u]:
-                if v in tmp.keys():
-                    tmp[v] += rank[u]/len(graph[u])
-                else:
-                    rank[v] = float(1)/n
-                    tmp[v] = rank[u]/len(graph[u])
+                tmp[v] += rank[u]/len(graph[u])
 
         diff = sum(abs(rank[i]-tmp[i]) for i in tmp.keys())
 
