@@ -80,7 +80,7 @@ def two_means(G, directed=False):
 
     while added < n:
         # Scegli un nodo che non è ancora in un cluster e aggiungilo al cluster più vicino
-        candidate_nodes = [el for el in G.nodes() if el not in cluster0 | cluster1]
+        candidate_nodes = [el for el in G.nodes() if el not in cluster0 | cluster1] 
 
         if directed:
             candidate_nodes = [el for el in candidate_nodes if (len(set(G.successors(el)).intersection(cluster0)) != 0 or len(set(G.predecessors(el)).intersection(cluster0)) != 0) or (len(set(G.successors(el)).intersection(cluster1)) != 0 or len(set(G.predecessors(el)).intersection(cluster1)) != 0)]
@@ -407,6 +407,8 @@ def parallel_spectral(G,j, directed=False):
 
 
 if __name__ == '__main__':
+    print("GRAFO DIRETTO")
+    #GRAFO DIRETTO
     G = nx.DiGraph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
@@ -418,25 +420,28 @@ if __name__ == '__main__':
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
 
-    '''print("CLUSTERING")
     print("Hierarchical")
     print(hierarchical(G))
     print("Two Means")
     print(two_means(G,directed=True))
-    print("Spectral")
-    print(spectral(G,directed=False))'''
     
+    print("Spectral")
+    print(spectral(G,directed=True))
+    
+    print("Girman Newman")
+    print(girman_newman(G,directed=True))
+
+    #print("PARALLEL IMPLEMENTATION")
+
     '''print("Parallel Two Means")
-    print(parallel_two_means(G,2,directed=False))'''
+    print(parallel_two_means(G,2,directed=True))'''
 
     '''print("Parallel Spectral")
     print(parallel_spectral(G,2,directed=True))'''
 
-    print("Girman Newman")
-    print(girman_newman(G,directed=True))
 
-    print("Parallel Girman Newman")
-    print(parallel_girman_newman_v1(G,2,directed=True))
+    '''print("Parallel Girman Newman")
+    print(parallel_girman_newman_v1(G,2,directed=True))'''
 
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
@@ -444,3 +449,37 @@ if __name__ == '__main__':
     labels = {edge: edge for edge in G.edges()}
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_color='red')
     plt.show()
+
+    print("GRAFO NON DIRETTO")
+    #GRAFO NON DIRETTO
+    G = nx.Graph()
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
+
+    print("Hierarchical")
+    print(hierarchical(G))
+    print("Two Means")
+    print(two_means(G,directed=False))
+    
+    print("Spectral")
+    print(spectral(G,directed=False))
+    
+    print("Girman Newman")
+    print(girman_newman(G,directed=False))
+
+'''    print("PARALLEL IMPLEMENTATION")
+    print("Parallel Two Means")
+    print(parallel_two_means(G,2,directed=False))
+
+    print("Parallel Spectral")
+    print(parallel_spectral(G,2,directed=False))
+
+    print("Parallel Girman Newman")
+    print(parallel_girman_newman_v1(G,2,directed=False))'''
