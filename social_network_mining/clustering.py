@@ -1,4 +1,6 @@
 from matplotlib import pyplot as plt
+from betweenness import betweenness 
+from betweenness import parallel_betweenness 
 from priorityq import PriorityQueue
 import networkx as nx
 import random
@@ -8,6 +10,11 @@ import itertools as it
 import math
 
 
+#dividing a graph into chunks, for parallel implementation, we need to divide the nodes in chunks
+def chunks(data, size):
+    idata=iter(data)
+    for i in range(0, len(data), size):
+        yield {k:data[k] for k in it.islice(idata, size)}
 
 #For direct and undirect graphs
 def hierarchical(G):
@@ -172,7 +179,124 @@ def parallel_two_means(G,j,directed= False):
     return final_cluster0, final_cluster1
 
 
+#Girman Newman for both directed and undirected graphs
+def girman_newman(G, directed=False):
+
+    graph=G.copy() # We make a copy of the graph. In this way we will modify the copy, but not the original graph
     
+    if directed:
+        connected_components = list(nx.weakly_connected_components(graph))
+    else:
+        connected_components = list(nx.connected_components(graph))
+
+    q = nx.algorithms.community.modularity(G,connected_components)
+
+    done = False
+    while not done:
+        # After each edge removal we will recompute betweenness:
+        # indeed, edges with lower betweenness may have increased their importance,
+        # since shortest path that previously went through on deleted edges, now may be routed on this new edge;
+        # similarly, edges with high betweenness may have decreased their importance,
+        # since most of the shortest paths previously going through them disappeared because the graph has been disconnected.
+        # However, complexity arising from recomputing betweenness at each iteration is huge.
+        # A heuristic approach in this case would be to compute betweenness only once
+        # and to remove edges in decreasing order of computed betweenness.
+        eb, nb = betweenness(graph)
+
+        edge = tuple(max(eb, key=eb.get))
+
+        if directed:
+            if graph.has_edge(edge[0],edge[1]):
+                graph.remove_edge(edge[0],edge[1]) 
+            else:
+                #controllare se è corretto togliere l'arco in questo modo
+                graph.remove_edge(edge[1],edge[0])
+        else:
+            graph.remove_edge(edge[0],edge[1])
+        
+        # We continue iteration of the algorithm as long as the newly achieved clustering
+        # has performance that are not worse than the previous clustering.
+        # An alternative would be to stop when performance is above a given threshold.
+        if directed:
+            new_connected_components = list(nx.weakly_connected_components(graph))
+        else:
+            new_connected_components = list(nx.connected_components(graph))
+        newq = nx.algorithms.community.modularity(G,new_connected_components)
+        if abs(newq) <= abs(q):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+
+    return new_connected_components
+
+#parallel implementation of girman newman algorithm with parallel betweenness
+def parallel_girman_newman_v1 (G,j,directed=False):
+
+    graph=G.copy() # We make a copy of the graph. In this way we will modify the copy, but not the original graph
+        
+
+    if directed:
+        connected_components = list(nx.weakly_connected_components(graph))
+    else:
+        connected_components = list(nx.connected_components(graph))
+
+    q = nx.algorithms.community.modularity(G,connected_components)
+
+    done = False
+    while not done:
+        # After each edge removal we will recompute betweenness:
+        # indeed, edges with lower betweenness may have increased their importance,
+        # since shortest path that previously went through on deleted edges, now may be routed on this new edge;
+        # similarly, edges with high betweenness may have decreased their importance,
+        # since most of the shortest paths previously going through them disappeared because the graph has been disconnected.
+        # However, complexity arising from recomputing betweenness at each iteration is huge.
+        # A heuristic approach in this case would be to compute betweenness only once
+        # and to remove edges in decreasing order of computed betweenness.
+        eb, nb = parallel_betweenness(graph)
+
+        edge = tuple(max(eb, key=eb.get))
+            
+        if directed:
+            if graph.has_edge(edge[0],edge[1]):
+                graph.remove_edge(edge[0],edge[1])
+            else:
+                graph.remove_edge(edge[1],edge[0])
+        else:
+            graph.remove_edge(edge[0],edge[1])
+
+        #edge=tuple(max(eb, key=eb.get))
+        
+        # We continue iteration of the algorithm as long as the newly achieved clustering
+        # has performance that are not worse than the previous clustering.
+        # An alternative would be to stop when performance is above a given threshold.
+        if directed:
+            new_connected_components = list(nx.weakly_connected_components(graph))
+        else:
+            new_connected_components = list(nx.connected_components(graph))
+        newq = nx.algorithms.community.modularity(G,new_connected_components)
+        if abs(newq) <= abs(q):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+    
+    return new_connected_components
+
+#parallel implementation of girman newman algorithm
+def girman_newman_parallel (G, j,directed=False):   
+    
+    results = []
+    
+    with Parallel (n_jobs = j) as parallel:
+        pass
+        #results = parallel(delayed(girman_newman_v2)(G,X,directed) for X in chunks(G.nodes(),math.ceil(len(G.nodes())/j)))
+    #aggregation of results
+    return results
+
+   
+
+   
 #Spectral for directed and undirected networks
 def spectral(G,directed=False):
     n = G.number_of_nodes()
@@ -218,12 +342,6 @@ def spectral(G,directed=False):
 
 
 #PARALLEL SPECTRAL IMPLEMENTATION
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
-
-
 def spectral_v2(G,directed = False, sample = None):
     nodes = sorted(G.nodes())
     
@@ -272,7 +390,7 @@ def spectral_v2(G,directed = False, sample = None):
     #     while the third (fourth, respectively) cluster contains those nodes i such that only v[i,0] (only v[i,1], resp.) is negative.
     return (c1, c2)
 
-#problema con le reti dirette e non c'è l'aggregazione dei risultati
+#Manca l'aggregazione dei risultati
 def parallel_spectral(G,j, directed=False):
     results =[]
     
@@ -283,11 +401,13 @@ def parallel_spectral(G,j, directed=False):
     c2_final = set()
     #aggregazione risultati
     for result in results:
-        print (result)
+        print(result)
+    
     return (c1_final,c2_final)
 
+
 if __name__ == '__main__':
-    G = nx.Graph()
+    G = nx.DiGraph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
     G.add_edge('B', 'C')
@@ -297,18 +417,26 @@ if __name__ == '__main__':
     G.add_edge('D', 'G')
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
+
     '''print("CLUSTERING")
     print("Hierarchical")
     print(hierarchical(G))
     print("Two Means")
     print(two_means(G,directed=True))
-
     print("Spectral")
     print(spectral(G,directed=False))'''
+    
+    '''print("Parallel Two Means")
+    print(parallel_two_means(G,2,directed=False))'''
 
-    print(parallel_two_means(G,2,directed=False))
     '''print("Parallel Spectral")
-    print(parallel_spectral(G,2,directed=False))'''
+    print(parallel_spectral(G,2,directed=True))'''
+
+    print("Girman Newman")
+    print(girman_newman(G,directed=True))
+
+    print("Parallel Girman Newman")
+    print(parallel_girman_newman_v1(G,2,directed=True))
 
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
