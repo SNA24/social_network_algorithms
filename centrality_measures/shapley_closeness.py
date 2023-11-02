@@ -1,6 +1,12 @@
 import networkx as nx
 from priorityq import PriorityQueue
 from math import exp
+import networkx as nx
+import math
+import itertools as it
+import networkx as nx
+from priorityq import PriorityQueue
+from joblib import Parallel, delayed
 
 #CENTRALITY MEASURES
 #Returns the top k nodes of G according to the centrality measure "measure"
@@ -13,6 +19,12 @@ def top(G,measure,k):
     for i in range(k):
         out.append(pq.pop())
     return out
+
+#Utility used for split a vector data in chunks of the given size.
+def chunks(data, size):
+    idata=iter(data)
+    for i in range(0, len(data), size):
+        yield {k:data[k] for k in it.islice(idata, size)}
 
 def inverse(degree):
     """
@@ -44,7 +56,7 @@ def power_law(degree, alpha=0.1):
     """
     return degree**(-alpha)
 
-def shapleycloseness(G):
+def shapleycloseness(G, sample = None):
     """ 
     # INPUT
     - G is a networkx graph
@@ -52,16 +64,19 @@ def shapleycloseness(G):
     # OUTPUT
     - Shapley value of all the nodes in G.
     """
+    if sample is None:
+        sample = G.nodes()
+
     SV = {i: 0 for i in G.nodes()}
 
-    for v in G.nodes():
+    for v in sample:
 
         distances = nx.single_source_dijkstra_path_length(G, v)
-        w = list(distances.keys())
-        D = list(distances.values())
+        
+        w, D = zip(*sorted(distances.items(), key=lambda x: x[1]))
 
         sum = 0
-        index = len(G.nodes())-1
+        index = len(distances)-1
         prevDistance = -1
         prevSV = -1
 
@@ -76,13 +91,20 @@ def shapleycloseness(G):
             prevSV = currSV
             index -= 1
         
-        if D[0] != 0:
-            SV[v] += exponential_decay(0) - sum
+        SV[v] += exponential_decay(0) - sum
 
     return SV
 
+def parallel_shapley_closeness(G, j=4):
+
+    with Parallel(n_jobs=j) as parallel:
+        SV = parallel(delayed(shapleycloseness)(G, chunk) for chunk in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
+
+    return {k: sum([sv[k] for sv in SV]) for k in SV[0]}
+
 # Example
 if __name__ == '__main__':
+    print("Undirected")
     G = nx.Graph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
@@ -96,5 +118,23 @@ if __name__ == '__main__':
     # print the two centrality measures sorted by value
     print("Shapley Closeness Centrality")
     print(top(G, shapleycloseness, 7))
+    print("Parallel Shapley Closeness Centrality")
+    print(top(G, parallel_shapley_closeness, 7))
 
+    print("Directed")
+    G = nx.DiGraph()
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
+    # print the two centrality measures sorted by value
+    print("Shapley Closeness Centrality")
+    print(top(G, shapleycloseness, 7))
+    print("Parallel Shapley Closeness Centrality")
+    print(top(G, parallel_shapley_closeness, 7))
     
