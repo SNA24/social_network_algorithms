@@ -145,7 +145,7 @@ def two_means_v2(G,u,directed=False):
 
     return cluster0, cluster1
 
-
+#Risolvere problema di avere lo stesso nodo in due cluster diversi
 def parallel_two_means(G,j,directed= False):
 
     results = []
@@ -173,9 +173,6 @@ def parallel_two_means(G,j,directed= False):
 
 
     
-
-
-
 #Spectral for directed and undirected networks
 def spectral(G,directed=False):
     n = G.number_of_nodes()
@@ -187,7 +184,7 @@ def spectral(G,directed=False):
         #print(L)
     else:
         L=nx.laplacian_matrix(G, nodes).astype('f')
-        print(L) #To see the laplacian of G uncomment this line
+        #print(L) #To see the laplacian of G uncomment this line
     # The following command computes eigenvalues and eigenvectors of the Laplacian matrix.
     # Recall that these are scalar numbers w_1, ..., w_k and vectors v_1, ..., v_k such that Lv_i=w_iv_i.
     # The first output is the array of eigenvalues in increasing order.
@@ -234,17 +231,16 @@ def spectral_v2(G,directed = False, sample = None):
         sample = nodes
     else:
         sample = sorted(sample)
-        print(sample)
 
     n = len(sample)
     # Laplacian of a graph is a matrix, with diagonal entries being the degree of the corresponding node
     # and off-diagonal entries being -1 if an edge between the corresponding nodes exists and 0 otherwise
     if directed:
-        L=nx.directed_laplacian_matrix(G, sample).astype('f')
+        L=nx.directed_laplacian_matrix(G.subgraph(sample), sample).astype('f')
         #print(L)
     else:
-        L=nx.laplacian_matrix(G, sample).astype('f')
-        print(L) #To see the laplacian of G uncomment this line
+        L=nx.laplacian_matrix(G.subgraph(sample), sample).astype('f')
+        #print(L) #To see the laplacian of G uncomment this line
     # The following command computes eigenvalues and eigenvectors of the Laplacian matrix.
     # Recall that these are scalar numbers w_1, ..., w_k and vectors v_1, ..., v_k such that Lv_i=w_iv_i.
     # The first output is the array of eigenvalues in increasing order.
@@ -276,6 +272,7 @@ def spectral_v2(G,directed = False, sample = None):
     #     while the third (fourth, respectively) cluster contains those nodes i such that only v[i,0] (only v[i,1], resp.) is negative.
     return (c1, c2)
 
+#problema con le reti dirette e non c'è l'aggregazione dei risultati
 def parallel_spectral(G,j, directed=False):
     results =[]
     
@@ -286,11 +283,11 @@ def parallel_spectral(G,j, directed=False):
     c2_final = set()
     #aggregazione risultati
     for result in results:
-        pass
+        print (result)
     return (c1_final,c2_final)
 
 if __name__ == '__main__':
-    G = nx.DiGraph()
+    G = nx.Graph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
     G.add_edge('B', 'C')
@@ -304,13 +301,15 @@ if __name__ == '__main__':
     print("Hierarchical")
     print(hierarchical(G))
     print("Two Means")
-    print(two_means(G,directed=True))'''
+    print(two_means(G,directed=True))
 
     print("Spectral")
-    print(spectral(G,directed=True))
+    print(spectral(G,directed=False))'''
 
-    #print(parallel_two_means(G,2,directed=True))
-    print(parallel_spectral(G,2,directed=True))
+    print(parallel_two_means(G,2,directed=False))
+    '''print("Parallel Spectral")
+    print(parallel_spectral(G,2,directed=False))'''
+
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
     nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10)
