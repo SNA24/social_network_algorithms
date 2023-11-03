@@ -2,12 +2,12 @@ from joblib import Parallel, delayed
 import networkx as nx
 import math
 
-#PAGE RANK
+# PAGE RANK
 #s is the probability of selecting a neighbor. The probability of a restart is 1-s
 #step is the maximum number of steps in which the process is repeated
 #confidence is the maximum difference allowed in the rank between two consecutive step.
 #When this difference is below or equal to confidence, we assume that computation is terminated.
-def pageRank(G, s=0.85, step=100, confidence=0):
+def pageRank(G, s=0.85, step=75, confidence=0):
     time = 0
     n=nx.number_of_nodes(G)
     done = False
@@ -28,10 +28,7 @@ def pageRank(G, s=0.85, step=100, confidence=0):
                 # with probability s, I follow one of the link on the current page.
                 # So, if I am on page i with probability rank[i], at the next step I would be on page j at which i links
                 # with probability s*rank[i]*probability of following link (i,j) that is 1/out_degree(i)
-                # if not nx.is_directed(G):
                 tmp[v] += rank[u]/G.degree(u)
-                # else:
-                #     tmp[v] += rank[u]/G.out_degree(u) if u in G[v] else 0
 
         # computes the difference between the old rank and the new rank and updates rank to contain the new rank
         # difference is computed in L1 norm.
@@ -82,7 +79,7 @@ def pageRankParallel(G, s=0.85, step=100, confidence=0, n_jobs=1):
     # compute the page rank for each block
     ranks = Parallel(n_jobs=n_jobs)(delayed(pageRank)(getBlock(graph,i,j), s, int(step), confidence) for i in range(n) for j in range(n))
 
-    rank = {node : sum(ranks[i][node] for i in range(n_jobs) if node in ranks[i].keys()) for node in G.nodes()}
+    rank = {node : sum(ranks[i][node]/n_jobs for i in range(n_jobs) if node in ranks[i].keys()) for node in G.nodes()}
 
     return rank
 
@@ -92,16 +89,16 @@ if __name__ == '__main__':
 
     print("Undirected Graph")
     G = nx.Graph()
-    G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','w'),('w','z')])
-    # G.add_edge('A', 'B')
-    # G.add_edge('A', 'C')
-    # G.add_edge('B', 'C')
-    # G.add_edge('B', 'D')
-    # G.add_edge('D', 'E')
-    # G.add_edge('D', 'F')
-    # G.add_edge('D', 'G')
-    # G.add_edge('E', 'F')
-    # G.add_edge('F', 'G')
+    # G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','w'),('w','z')])
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
 
     print(sorted(pageRank(G).items(), key=lambda x : x[1], reverse=True))
     print(sorted(pageRankParallel(G, n_jobs=n_jobs).items(), key=lambda x : x[1], reverse=True))
@@ -109,16 +106,16 @@ if __name__ == '__main__':
 
     print("Directed Graph")
     G = nx.DiGraph()
-    G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','x'),('y','w'),('z','x'),('w','y'),('w','z')])
-    # G.add_edge('A', 'B')
-    # G.add_edge('A', 'C')
-    # G.add_edge('B', 'C')
-    # G.add_edge('B', 'D')
-    # G.add_edge('D', 'E')
-    # G.add_edge('D', 'F')
-    # G.add_edge('D', 'G')
-    # G.add_edge('E', 'F')
-    # G.add_edge('F', 'G')
+    # G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','x'),('y','w'),('z','x'),('w','y'),('w','z')])
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
 
     print(sorted(pageRank(G).items(), key=lambda x : x[1], reverse=True))
     print(sorted(pageRankParallel(G, n_jobs=n_jobs).items(), key=lambda x : x[1], reverse=True))
