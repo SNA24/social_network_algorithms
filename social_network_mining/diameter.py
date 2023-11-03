@@ -7,10 +7,12 @@ from joblib import Parallel, delayed
 #Classic algorithm for computing Diameter with directed and undirected networks
 def diameter(G, sample=None, directed=False):
     nodes = G.nodes()
-    n = len(nodes)
     diam = 0
+    
     if sample is None:
         sample = nodes
+
+    n = len(nodes)
 
     visited = set()
     
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
     #print(diameter(G))
     
-    diam = diameter(G, directed=False)
+    '''diam = diameter(G, directed=False)
     print("Basic diameter")
     print(diam)
 
@@ -105,7 +107,7 @@ if __name__ == '__main__':
     print(stream_diam(G,directed=False))
 
     print("parallel diameter")
-    print(parallel_diam(G,4,directed=False))
+    print(parallel_diam(G,4,directed=False))'''
 
     # Creazione di un grafo diretto strettamente connesso
     G = nx.DiGraph()
@@ -120,16 +122,16 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
     
 
-    print("Diametro grafo diretto")
+    '''print("Diametro grafo diretto")
     diam = diameter(G, directed=True)
     print("Basic diameter")
     print(diam)
 
     print("ad-hoc diameter")    
-    print(stream_diam(G,directed=True))
+    print(stream_diam(G,directed=True))'''
  
-    '''print("parallel diameter")
-    print(parallel_diam(G,4,directed=True))'''
+    print("parallel diameter")
+    print(parallel_diam(G,2,directed=True))
 
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
