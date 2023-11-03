@@ -7,10 +7,12 @@ from joblib import Parallel, delayed
 #Classic algorithm for computing Diameter with directed and undirected networks
 def diameter(G, sample=None, directed=False):
     nodes = G.nodes()
-    n = len(nodes)
     diam = 0
+    
     if sample is None:
         sample = nodes
+
+    n = len(nodes)
 
     visited = set()
     
@@ -59,7 +61,6 @@ def stream_diam(G, directed=False):
 
     # At the beginning, R contains for each vertex v the number of nodes that can be reached from v in one step
     R = {v: G.degree(v) if not directed else (G.in_degree(v), G.out_degree(v)) for v in G.nodes()}
-    print(R)
     done = False
 
     while not done:
@@ -85,7 +86,8 @@ def stream_diam(G, directed=False):
 
 
 if __name__ == '__main__':
-    '''G=nx.Graph()
+    print("Diametro grafo non diretto")
+    G=nx.Graph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
     G.add_edge('B', 'C')
@@ -94,34 +96,42 @@ if __name__ == '__main__':
     G.add_edge('D', 'F')
     G.add_edge('D', 'G')
     G.add_edge('E', 'F')
-    G.add_edge('F', 'G')'''
+    G.add_edge('F', 'G')
     #print(diameter(G))
+    
+    '''diam = diameter(G, directed=False)
+    print("Basic diameter")
+    print(diam)
+
+    print("ad-hoc diameter")    
+    print(stream_diam(G,directed=False))
+
+    print("parallel diameter")
+    print(parallel_diam(G,4,directed=False))'''
 
     # Creazione di un grafo diretto strettamente connesso
     G = nx.DiGraph()
-
-    # Aggiunta di nodi
-    G.add_node('A')
-    G.add_node('B')
-    G.add_node('C')
-    G.add_node('D')
-    G.add_node('E')
-
-    # Collegamento dei nodi in una catena
     G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
     G.add_edge('B', 'C')
-    G.add_edge('C', 'D')
+    G.add_edge('B', 'D')
     G.add_edge('D', 'E')
-    G.add_edge('D', 'A')
-    G.add_edge('E','A')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
     
 
-    # Calculate the diameter of the directed graph
-    '''diam = diameter(G, directed=True)
-    print(diam)'''
+    '''print("Diametro grafo diretto")
+    diam = diameter(G, directed=True)
+    print("Basic diameter")
+    print(diam)
 
-    
-    print(stream_diam(G,directed=True))
+    print("ad-hoc diameter")    
+    print(stream_diam(G,directed=True))'''
+ 
+    print("parallel diameter")
+    print(parallel_diam(G,2,directed=True))
 
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)
@@ -129,6 +139,9 @@ if __name__ == '__main__':
     labels = {edge: edge for edge in G.edges()}
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_color='red')
     plt.show()
+
+
+
 
     
 

@@ -131,6 +131,7 @@ def girman_newman(G):
         # and to remove edges in decreasing order of computed betweenness.
         eb, nb = betweenness(graph)
         edge=tuple(max(eb, key=eb.get))
+        print(edge)
         graph.remove_edge(edge[0],edge[1])
 
         # We continue iteration of the algorithm as long as the newly achieved clustering
