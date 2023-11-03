@@ -28,7 +28,7 @@ def pageRank(G, s=0.85, step=75, confidence=0):
                 # with probability s, I follow one of the link on the current page.
                 # So, if I am on page i with probability rank[i], at the next step I would be on page j at which i links
                 # with probability s*rank[i]*probability of following link (i,j) that is 1/out_degree(i)
-                tmp[v] += rank[u]/G.degree(u)
+                tmp[v] += rank[u]/G.degree(u) if not nx.is_directed(G) else rank[u]/G.out_degree(u)
 
         # computes the difference between the old rank and the new rank and updates rank to contain the new rank
         # difference is computed in L1 norm.
@@ -54,40 +54,61 @@ def partition(G, n):
 
     for u in G.nodes():
         for v in G[u]:
+            # make sure that the edge is not duplicated across different blocks
+            # if nx.is_directed(G) or u not in graph[partition[v]][partition[u]][v]:
             graph[partition[u]][partition[v]][u].add(v)
-            if not nx.is_directed(G):
-                graph[partition[v]][partition[u]][v].add(u)
 
     return graph
 
     # Given this block representation of a graph, then each of the j jobs can execute the update procedure only on its block.
     # Then the page rank of a node u in the i-th partition is given by the sum of the page ranks computed by jobs that worked in blocks[*][i].
-    # Note that this sum can be also be parallelized with each job executing it for different partitions.
+    
 
-def pageRankParallel(G, s=0.85, step=75, confidence=0, n_jobs=1):
+def pageRankParallel(G, s=0.85, step=100, confidence=0, n_jobs=1):
 
-    # partition the graph into n_jobs blocks
-    graph = partition(G, n_jobs)
+    # if n_jobs is not a perfect square, raise an exception
+    if not math.sqrt(n_jobs).is_integer():
+        print("n_jobs must be a perfect square")
+        return
+
+    n = int(math.sqrt(n_jobs))
+
+    graph = partition(G, n)
 
     def getBlock(graph,i,j):
-        graph = nx.DiGraph(graph[i][j])
-        return graph
+        return nx.DiGraph(graph[i][j]) if nx.is_directed(G) else nx.Graph(graph[i][j])
 
     # compute the page rank for each block
-    ranks = Parallel(n_jobs=n_jobs)(delayed(pageRank)(getBlock(graph,i,j), s, step, confidence) for i in range(n_jobs) for j in range(n_jobs))
+    ranks = Parallel(n_jobs=n_jobs)(delayed(pageRank)(getBlock(graph,i,j), s, step, confidence) for i in range(n) for j in range(n))
 
-    # sum the page ranks for each node
-    rank = {node : sum(ranks[i][node] for i in range(n_jobs) if node in ranks[i].keys()) for node in G.nodes()}
+    if nx.is_directed(G):
+        # sum the page ranks for each node
+        rank = {node : sum(ranks[i][node] for i in range(n_jobs) if node in ranks[i].keys()) for node in G.nodes()}
+        # Note that this sum can be also be parallelized with each job executing it for different partitions.
+    else:
+    
+        # aggregate the page ranks for each node in the undirected case, taking into account the bidiractionality of the edges
+        rank = {node : sum(ranks[i][node] for i in range(n_jobs) if node in ranks[i].keys()) for node in G.nodes()}
 
+    
     return rank
 
 if __name__ == '__main__':
 
-    G = nx.DiGraph()
+    print("Undirected Graph")
+    G = nx.Graph()
     G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','x'),('y','w'),('z','x'),('w','y'),('w','z')])
-    print(partition(G, 2))
 
     print(sorted(pageRank(G).items(), key=lambda x : x[1], reverse=True))
-    print(sorted(pageRankParallel(G, n_jobs=25).items(), key=lambda x : x[1], reverse=True))
+    print(sorted(pageRankParallel(G, n_jobs=64).items(), key=lambda x : x[1], reverse=True))
+    print(sorted(nx.pagerank(G).items(), key=lambda x : x[1], reverse=True))
+
+    print("Directed Graph")
+    G = nx.DiGraph()
+    G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','x'),('y','w'),('z','x'),('w','y'),('w','z')])
+
+    print(sorted(pageRank(G).items(), key=lambda x : x[1], reverse=True))
+    print(sorted(pageRankParallel(G, n_jobs=64).items(), key=lambda x : x[1], reverse=True))
+    print(sorted(nx.pagerank(G).items(), key=lambda x : x[1], reverse=True))
 
     
