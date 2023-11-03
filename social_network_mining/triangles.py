@@ -43,9 +43,11 @@ def num_triangles(G, directed = False):
     for edge in G.edges():
         sel = less(G, edge,directed)
         if edge[sel] not in heavy_hitters:
+            #arco tra il primo e il secondo nodo
             for u in G[edge[sel]]:
                 if directed:
-                    if less(G, [u, edge[1 - sel]], directed) and G.has_edge(edge[sel], edge[1 - sel] and u != edge[1 - sel]):
+                    #arco tra il secondo e il terzo nodo
+                    if less(G, [u, edge[1 - sel]], directed) and G.has_edge(edge[sel], edge[1 - sel]):
                         num_triangles += 1
                 else:
                     if less(G, [u, edge[1 - sel]],directed) and G.has_edge(u, edge[1 - sel]):
@@ -81,8 +83,7 @@ def num_triangles_parallel(G, j, directed = False):
             heavy_hitters.add(u)
 
     triangle_candidates = list(it.combinations(heavy_hitters, 3))
-    size = len(list(triangle_candidates))//j
-
+    size = math.ceil(len(list(triangle_candidates))/j)
     # Each process counts the triangles in a subset of triangle_candidates
     with Parallel(n_jobs = j) as parallel:
         # Run in parallel diameter function on each processor by passing to each processor only the subset of nodes on which it works
@@ -100,9 +101,8 @@ def num_triangles_parallel(G, j, directed = False):
                     '''print(edge[sel], u, edge[1 - sel])
                     print(less(G, [u, edge[1 - sel]], directed))
                     print(G.has_edge(edge[sel], edge[1 - sel]))'''
-                    if less(G, [u, edge[1 - sel]], directed) and G.has_edge(edge[sel], edge[1 - sel] and u != edge[1 - sel]):
+                    if less(G, [u, edge[1 - sel]], directed) and G.has_edge(edge[sel], edge[1 - sel]):
                         num_triangles += 1
-                        print(num_triangles)
                 else:
                     if less(G, [u, edge[1 - sel]],directed) and G.has_edge(u, edge[1 - sel]):
                         num_triangles += 1
@@ -113,7 +113,7 @@ def num_triangles_parallel(G, j, directed = False):
 if __name__ == '__main__':
     print("GRAFO DIRETTO")
     G=nx.DiGraph()
-    '''G.add_edge('A', 'B')
+    G.add_edge('A', 'B')
     G.add_edge('C', 'A')
     G.add_edge('B', 'C')
     G.add_edge('B', 'D')
@@ -121,25 +121,8 @@ if __name__ == '__main__':
     G.add_edge('D', 'A')
     G.add_edge('D', 'G')
     G.add_edge('E', 'F')
-    G.add_edge('F', 'D')'''
+    G.add_edge('F', 'D')
 
-    G.add_edges_from([
-    ('A', 'B'),
-    ('B', 'C'),
-    ('C', 'D'),
-    ('D', 'E'),
-    ('E', 'F'),
-    ('F', 'G'),
-    ('G', 'H'),
-    ('H', 'A'),
-    ('A', 'I'),
-    ('I', 'J'),
-    ('J', 'K'),
-    ('K', 'L'),
-    ('L', 'M'),
-    ('M', 'N'),
-    ('N', 'O'),
-])
     
     triang = num_triangles(G,directed=True)
     print("Naive implementation")

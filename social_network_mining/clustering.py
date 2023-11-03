@@ -68,7 +68,10 @@ def two_means(G, directed=False):
     if directed:
         # Per i grafi diretti, puoi utilizzare successori e predecessori
         u = random.choice(list(G.nodes()))
-        v = random.choice([node for node in G.nodes() if node not in G.predecessors(u) and node not in G.successors(u) and node != u]) #controllare bene 
+        candidate_nodes = [node for node in G.nodes() if node not in G.predecessors(u) and node not in G.successors(u) and node != u]
+        if not candidate_nodes:
+            return {u}, set()
+        v = random.choice(candidate_nodes) #controllare bene 
     else:
         # Per i grafi non diretti, puoi utilizzare i vicini
         u = random.choice(list(G.nodes()))
@@ -109,14 +112,20 @@ def two_means(G, directed=False):
 
 
 #PARALLEL IMPLEMENTATION OF TWO MEANS ALGORITHM 
-def two_means_v2(G,u,directed=False):
+def two_means_v2(G,sample = None,directed=False):
+    
+    if sample is not None:
+        G = G.subgraph(sample)
+    
     n = G.number_of_nodes()
 
     if directed:
         # Per i grafi diretti, puoi utilizzare successori e predecessori
+        u = random.choice(list(G.nodes()))
         v = random.choice([node for node in G.nodes() if node not in G.predecessors(u) and node not in G.successors(u) and node != u]) #controllare bene 
     else:
         # Per i grafi non diretti, puoi utilizzare i vicini
+        u = random.choice(list(G.nodes()))
         v = random.choice(list(nx.non_neighbors(G, u)))
 
     cluster0 = {u}
@@ -153,7 +162,7 @@ def two_means_v2(G,u,directed=False):
     return cluster0, cluster1
 
 #Risolvere problema di avere lo stesso nodo in due cluster diversi
-def parallel_two_means(G,j,directed= False):
+def parallel_two_means(G,j,directed=False):
 
     results = []
     '''u = []
@@ -162,8 +171,7 @@ def parallel_two_means(G,j,directed= False):
     
     #cerchiamo i cluster partendo da nodi diversi
     with Parallel (n_jobs = j) as parallel:
-        starting_nodes = random.sample(list(G.nodes()), j)
-        results = (parallel(delayed(two_means_v2)(G,x,directed) for x in starting_nodes))
+        results = (parallel(delayed(two_means_v2)(G,X,directed) for X in chunks(G.nodes(),math.ceil(len(G.nodes())/j))))
     
     # Aggregates the results
     final_cluster0 = set()
@@ -172,7 +180,7 @@ def parallel_two_means(G,j,directed= False):
     #COME LI AGGREGHIAMO?
     for result in results:
         c0, c1 = result
-        
+        print(result)
         final_cluster0.update(list(c0))
         final_cluster1.update(list(c1))
 
@@ -433,8 +441,8 @@ if __name__ == '__main__':
 
     #print("PARALLEL IMPLEMENTATION")
 
-    '''print("Parallel Two Means")
-    print(parallel_two_means(G,2,directed=True))'''
+    print("Parallel Two Means")
+    print(parallel_two_means(G,2,directed=True))
 
     '''print("Parallel Spectral")
     print(parallel_spectral(G,2,directed=True))'''
