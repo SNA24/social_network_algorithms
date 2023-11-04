@@ -3,6 +3,7 @@ import networkx as nx
 import math
 
 # PAGE RANK
+# PAGE RANK
 #s is the probability of selecting a neighbor. The probability of a restart is 1-s
 #step is the maximum number of steps in which the process is repeated
 #confidence is the maximum difference allowed in the rank between two consecutive step.
