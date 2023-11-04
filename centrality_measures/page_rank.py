@@ -3,18 +3,16 @@ import networkx as nx
 import math
 
 # PAGE RANK
-# PAGE RANK
 #s is the probability of selecting a neighbor. The probability of a restart is 1-s
 #step is the maximum number of steps in which the process is repeated
 #confidence is the maximum difference allowed in the rank between two consecutive step.
 #When this difference is below or equal to confidence, we assume that computation is terminated.
 def pageRank(G, s=0.85, step=75, confidence=0):
 
-    if(len(G.nodes()) == 0):
-        return {}
-
     time = 0
     n=nx.number_of_nodes(G)
+    if n == 0:
+        return {}
     done = False
 
     # At the beginning, I choose the starting node uniformly at the random.
@@ -125,7 +123,6 @@ if __name__ == '__main__':
 
     print(sorted(pageRank(G).items(), key=lambda x : x[1], reverse=True))
     print(sorted(pageRankParallel(G, n_jobs=n_jobs).items(), key=lambda x : x[1], reverse=True))
-    # print(sorted(nx.pagerank(G).items(), key=lambda x : x[1], reverse=True))
 
     print("Directed Graph")
     G = nx.DiGraph()
