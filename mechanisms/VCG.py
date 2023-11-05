@@ -73,7 +73,7 @@ def vcg(k, seller_net, reports, bids):
 
             sw_without_bidder_and_slot = 0
 
-            for winner in winners_list[:min(k, len(winners_list))]:
+            for winner in winners_list[:min(k, len(winners_list)-1)]:
                 if winner != bidder:
                     print(winner)
                     sw_without_bidder_and_slot += bids[winner]
