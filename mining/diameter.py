@@ -8,30 +8,43 @@ from joblib import Parallel, delayed
 def diameter(G, sample=None, directed=False):
     nodes = G.nodes()
     diam = 0
-    
+    n = len(nodes)
+       
+
     if sample is None:
         sample = nodes
 
-    n = len(nodes)
-
+    print(G.nodes(), sample)
+    print("n",n) 
     visited = set()
     
     for u in sample:
+        print("partenza",u)
         udiam = 0
         clevel = [u]
+        print("aggiunto",u)
         visited.add(u)
         while len(visited) < n:
             nlevel = []
             while len(clevel) > 0:
                 c = clevel.pop()
+                print("pop",c)
+                if directed and G.out_degree(c) == 0:
+                    print(c, "non ha vicini")
+                    clevel = [n for n in G.predecessors(c)]
+                    print("vicini",clevel)
+                    next
                 for v in G.neighbors(c) if directed else G[c]:
+                    print("vicino",v)
                     if v not in visited:
                         visited.add(v)
+                        print("aggiunto",v)
                         nlevel.append(v)
             clevel = nlevel
             udiam += 1
         if udiam > diam:
             diam = udiam
+            print("diametro aggiornato",diam)
 
     return diam
 
@@ -50,6 +63,7 @@ def parallel_diam(G,j,directed=False):
     with Parallel(n_jobs = j) as parallel:
         # Run in parallel diameter function on each processor by passing to each processor only the subset of nodes on which it works
         result = parallel(delayed(diameter)(G, X, directed) for X in chunks(G.nodes(),math.ceil(len(G.nodes())/j)))
+        print(result)
         # Aggregates the results
         diam = max(result)
 
@@ -104,10 +118,10 @@ if __name__ == '__main__':
     print(diam)
 
     print("ad-hoc diameter")    
-    print(stream_diam(G,directed=False))
+    print(stream_diam(G,directed=False))'''
 
-    print("parallel diameter")
-    print(parallel_diam(G,4,directed=False))'''
+    '''print("parallel diameter")
+    print(parallel_diam(G,2,directed=False))'''
 
     # Creazione di un grafo diretto strettamente connesso
     G = nx.DiGraph()
