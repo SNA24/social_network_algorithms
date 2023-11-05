@@ -4,7 +4,7 @@ def vcg(k, seller_net, reports, bids):
     k : int
         Number of items to be sold.
     seller_net : set
-        Set of strings, each idnetifying a different bidder.
+        Set of strings, each identifying a different bidder.
     reports : dict
         Dictionary whose keys are strings each identifying a different bidder and whose
         values are sets of strings representing the set of bidders to which the bidder identified by the
@@ -27,5 +27,72 @@ def vcg(k, seller_net, reports, bids):
 
     allocation = {}
     payments = {}
-    
+
+    # 1. ask bidders to announce their valuations for the items
+    # OK conatained in bids
+
+    # 2. choose a socially optimal assignment of items to bidders (a perfect matching that maximizes the total 
+    # valuation of each buyer for what they get. This assignment is based on the announced valuations 
+    # (since that’s all we have access to.))
+
+    sorted_bids = sorted(bids.items(), key=lambda x: x[1], reverse=True)
+
+    winners_list = [bid[0] for bid in sorted_bids]
+    # remove from winners list the nodes which are in none of the report values 
+    for winner in winners_list:
+        find = False
+        for report in reports.values():
+            if winner in report:
+                find = True
+                break
+        if not find:
+            winners_list.remove(winner)
+
+    # 3. Charge each buyer the appropriate VCG price; that is, if buyer j receives item i under the optimal matching,
+    # then charge buyer j a price pij determined according to Equation pij = sw(A-j) - sw(A-j-i) where sw(A-j) is the
+    # social welfare of the optimal matching A, A-j-i is the optimal matching that results if we remove item i from
+    # A and buyer j from A, sw(A-j) is the social welfare of the optimal matching that results if we remove buyer j
+    # from A.
+
+    for bidder in seller_net:
+
+        if bidder in winners_list[:k]:
+
+            allocation[bidder] = True
+
+            # compute the social welfare without the bidder but with the slot
+            sw_without_bidder = 0
+
+            for winner in winners_list[:k+1]:
+                if winner != bidder:
+                    sw_without_bidder += bids[winner]
+
+            # compute the social welfare without the bidder and the slot
+
+            sw_without_bidder_and_slot = 0
+
+            for winner in winners_list[:k]:
+                if winner != bidder:
+                    sw_without_bidder_and_slot += bids[winner]
+
+            payments[bidder] = sw_without_bidder - sw_without_bidder_and_slot
+
+        else :
+            allocation[bidder] = False
+            payments[bidder] = 0
+
     return allocation, payments
+
+# test
+if __name__ == '__main__':
+    
+    # test 1
+    k = 3
+    seller_net = {'1', '2', '3', '4'}
+    reports = {'1': {'1', '2'}, '2': {'1', '2'}, '3': {'3'}}
+    bids = {'1': 1, '2': 2, '3': 3, '4': 4}
+
+    allocation, payments = vcg(k, seller_net, reports, bids)
+    print(allocation)
+    print(payments)
+
