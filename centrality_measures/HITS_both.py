@@ -7,6 +7,10 @@ from itertools import product
 # G is assumed to be a directed graph
 # steps and confidence are as for pageRank
 # wa and wh are the weights that we assign to the authority value and the hub value of a node, in order to evaluate its rank
+# HITS
+# G is assumed to be a directed graph
+# steps and confidence are as for pageRank
+# wa and wh are the weights that we assign to the authority value and the hub value of a node, in order to evaluate its rank
 def hits(G, step=75, confidence=0, wa=0.5, wh=0.5):
     G = nx.DiGraph(G)
     time = 0
@@ -39,12 +43,10 @@ def hits(G, step=75, confidence=0, wa=0.5, wh=0.5):
         adiff = 0
         hdiff = 0
         for i in G.nodes():
-            if atot > 0:
-                adiff += abs(auth[i]-atmp[i] / atot)
-                auth[i] = atmp[i] / atot
-            if htot > 0:
-                hdiff += abs(hub[i] - htmp[i] / htot)
-                hub[i] = htmp[i] / htot
+            adiff += abs(auth[i]-atmp[i] / atot)
+            auth[i] = atmp[i] / atot
+            hdiff += abs(hub[i] - htmp[i] / htot)
+            hub[i] = htmp[i] / htot
 
         if adiff <= confidence and hdiff <=confidence:
             done = True
@@ -161,16 +163,16 @@ if __name__ == "__main__":
 
     print("Undirected Graph")
     G = nx.Graph()
-    G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','w'),('w','z')])
-    # G.add_edge('A', 'B')
-    # G.add_edge('A', 'C')
-    # G.add_edge('B', 'C')
-    # G.add_edge('B', 'D')
-    # G.add_edge('D', 'E')
-    # G.add_edge('D', 'F')
-    # G.add_edge('D', 'G')
-    # G.add_edge('E', 'F')
-    # G.add_edge('F', 'G')
+    # G.add_edges_from([('x','y'),('x','z'),('x','w'),('y','w'),('w','z')])
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
 
     print("HITS")
     print(sorted(hits(G).items(), key=lambda x: x[1], reverse=True))
