@@ -48,6 +48,8 @@ def vcg(k, seller_net, reports, bids):
         if not find:
             winners_list.remove(winner)
 
+    print(winners_list)
+
     # 3. Charge each buyer the appropriate VCG price; that is, if buyer j receives item i under the optimal matching,
     # then charge buyer j a price pij determined according to Equation pij = sw(A-j) - sw(A-j-i) where sw(A-j) is the
     # social welfare of the optimal matching A, A-j-i is the optimal matching that results if we remove item i from
@@ -56,14 +58,14 @@ def vcg(k, seller_net, reports, bids):
 
     for bidder in seller_net:
 
-        if bidder in winners_list[:k]:
+        if bidder in winners_list[:min(k, len(winners_list))]:
 
             allocation[bidder] = True
 
             # compute the social welfare without the bidder but with the slot
             sw_without_bidder = 0
 
-            for winner in winners_list[:k+1]:
+            for winner in winners_list[:min(k+1, len(winners_list))]:
                 if winner != bidder:
                     sw_without_bidder += bids[winner]
 
@@ -71,9 +73,12 @@ def vcg(k, seller_net, reports, bids):
 
             sw_without_bidder_and_slot = 0
 
-            for winner in winners_list[:k]:
+            for winner in winners_list[:min(k, len(winners_list))]:
                 if winner != bidder:
+                    print(winner)
                     sw_without_bidder_and_slot += bids[winner]
+
+            print(sw_without_bidder, sw_without_bidder_and_slot)
 
             payments[bidder] = sw_without_bidder - sw_without_bidder_and_slot
 
@@ -87,10 +92,11 @@ def vcg(k, seller_net, reports, bids):
 if __name__ == '__main__':
     
     # test 1
-    k = 3
-    seller_net = {'1', '2', '3', '4'}
-    reports = {'1': {'1', '2'}, '2': {'1', '2'}, '3': {'3'}}
-    bids = {'1': 1, '2': 2, '3': 3, '4': 4}
+    k = 4
+    seller_net = {'a', 'b', 'c', 'd', 'e', 'f', 'g'}
+
+    reports = {'a': {'b', 'c'}, 'b': {'c', 'd'}, 'd': {'e', 'f', 'g'}, 'e': {'f', 'g'}, 'f': {'g'}}
+    bids = {'a': 10, 'b': 109, 'c': 368, 'd': 12, 'e': 56, 'f': 25, 'g': 104}
 
     allocation, payments = vcg(k, seller_net, reports, bids)
     print(allocation)
