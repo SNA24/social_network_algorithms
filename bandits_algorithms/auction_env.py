@@ -13,6 +13,36 @@ class Environment:
 
     def receive_reward(self, a_t):
         return len(self.find_alive_edges(a_t))
+    
+class EpsGreedy_Learner:
+    # eps is a function that takes in input a time step t and returns eta_t
+    # Use T = None for unknown time horizon
+    def __init__(self, nodes, environment, eps, T=None):
+        self.__arms_set = list(nodes) #initialize the set of arms
+        self.__environment = environment #initialize the environment
+        self.__eps = eps #initialize the sequence of eps_t
+        self.__T = T
+        #Next initialization will serve for computing the best strategy during exploitation steps
+        self.__num = {a:0 for a in self.__arms_set} #It saves the number of times arm a has been selected
+        self.__rew = {a:0 for a in self.__arms_set} #It saves the cumulative reward achieved by arm a when selected
+        self.__avgrew = {a:0 for a in self.__arms_set} #It saves the average reward achieved by arm a until the current time step
+        self.__t = 0 #It saves the current time step
+
+    #This function returns the arm chosen by the learner and the corresponding reward returned by the environment
+    def play_arm(self):
+        r = random.random()
+        if r <= self.__eps(self.__t): #With probability eps_t
+            a_t = random.choice(self.__arms_set) #We choose an arm uniformly at random
+        else:
+            a_t = max(self.__avgrew, key=self.__avgrew.get) #We choose the arm that has the highest average revenue
+        reward = self.__environment.receive_reward(a_t) #We save the reward assigned by the environment
+        # We update the number of times arm a_t has been chosen, its cumulative and its average reward
+        self.__num[a_t] += 1
+        self.__rew[a_t] += reward
+        self.__avgrew[a_t] = self.__rew[a_t]/self.__num[a_t]
+        self.__t += 1 #We are ready for a new time step
+
+        return a_t, reward
 
 class UCB_Learner:
 
@@ -74,22 +104,38 @@ if __name__ == '__main__':
     #To this aim, we define N, and we will record for each learner a matrix containing
     #the regret for each simulation and each time step within the simulation
     N = 50 #number of simulations
+    eps_regrets = {n: {t: 0 for t in range(T)} for n in range(N)} #regret matrix for the eps-greedy learner
     ucb_regrets = {n: {t: 0 for t in range(T)} for n in range(N)} #regret matrix for the UCB learner
+
+    #INITIALIZATION FOR EPS-GREEDY
+    #A common choice for eps_t = (K log t/t)^1/3
+    def give_eps(t):
+        if t == 0:
+            return 1  #for the first step we cannot make exploitation, so eps_1 = 1
+        return (len(G.nodes())*math.log(t+1)/(t+1))**(1/3)
+    eps = give_eps
 
     #SIMULATION PLAY
     for n in range(N):
         ucb_cum_reward = 0 #it saves the cumulative reward of the UCB learner
+        eps_cum_reward = 0 #it saves the cumulative reward of the eps-greedy learner
         cum_opt_reward = 0 #it saves the cumulative reward of the best-arm in hindsight
         #Environment
         env = Environment(G)
         alive_edges_count = {n: env.find_alive_edges(n) for n in G.nodes()}
         opt_a = max(alive_edges_count, key=lambda k: len(alive_edges_count[k]))
+        #Eps-Greedy Learner
+        eps_learn = EpsGreedy_Learner(G.nodes(), env, eps, T)
         #UCB Learner
         ucb_learn = UCB_Learner(G.nodes(), env, T)
         for t in range(T):
             #reward obtained by the optimal arm
             cum_opt_reward += env.receive_reward(opt_a)
-
+            #reward obtained by the eps_greedy learner
+            a, reward = eps_learn.play_arm()
+            eps_cum_reward += reward
+            #regret of the eps_greedy learner
+            eps_regrets[n][t] = cum_opt_reward - eps_cum_reward
             # reward obtained by the ucb learner
             a, reward = ucb_learn.play_arm()
             ucb_cum_reward += reward
@@ -97,18 +143,30 @@ if __name__ == '__main__':
             ucb_regrets[n][t] = cum_opt_reward - ucb_cum_reward
 
     #compute the mean regret of the eps greedy and ucb learner
+    eps_mean_regrets = {t:0 for t in range(T)}
     ucb_mean_regrets = {t:0 for t in range(T)}
     for t in range(T):
+        eps_mean_regrets[t] = sum(eps_regrets[n][t] for n in range(N))/N
         ucb_mean_regrets[t] = sum(ucb_regrets[n][t] for n in range(N))/N
 
     #VISUALIZATION OF RESULTS
+    #compute t^2/3 (c K log t)^1/3
+    ref_eps = list()
+    for t in range(1, T+1):
+        ref_eps.append((t**(2/3))*(2*len(G.nodes())*math.log(t))**(1/3))
 
     #compute c*sqrt(KtlogT)
     ref_ucb = list()
     for t in range(1, T+1):
         ref_ucb.append(math.sqrt(len(G.nodes())*t*math.log(T)))
 
-    fig, (ax2) = plt.subplots(1)
+    fig, (ax1, ax2, ax3) = plt.subplots(3)
+    #Plot eps-greedy regret against its reference value
+    ax1.plot(range(1,T+1), eps_mean_regrets.values(), label = 'eps_mean_regret')
+    ax1.plot(range(1,T+1), ref_eps, label = f't^2/3 (2 K log t)^1/3')
+    ax1.set_xlabel('t')
+    ax1.set_ylabel('E[R(t)]')
+    ax1.legend()
 
     #Plot ucb regret against its reference value
     ax2.plot(range(1,T+1), ucb_mean_regrets.values(), label = 'ucb_mean_regret')
@@ -116,6 +174,13 @@ if __name__ == '__main__':
     ax2.set_xlabel('t')
     ax2.set_ylabel('E[R(t)]')
     ax2.legend()
+
+    #Plot ucb regret against eps-greedy regret
+    ax3.plot(range(1,T+1), eps_mean_regrets.values(), label = 'eps_mean_regret')
+    ax3.plot(range(1,T+1), ucb_mean_regrets.values(), label = 'ucb_mean_regret')
+    ax3.set_xlabel('t')
+    ax3.set_ylabel('E[R(t)]')
+    ax3.legend()
 
     #Observe that each algorithm performs better than the worst case regret bound
     #Anyway, UCB performs better than Eps-Greedy, as expected
