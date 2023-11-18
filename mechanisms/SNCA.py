@@ -1,107 +1,133 @@
-import random 
+import random
 
-def find_important_bidder(bids, N_prime, p_prime, reports):
+def find_most_important_agent_gamma_1(bids, N_prime, reports):
+    # under the priority gamma_1, the priority of agent i is higher than agent j if:
+    # 1. bids[i] > bids[j]
+    # 2. bids[i] == bids[j] and len(reports[i]) > len(reports[j])
+    # 3. bids[i] == bids[j] and len(reports[i]) == len(reports[j]) and i < j
+    # return the most important agent
+    prioritized_agents = sorted(N_prime, key=lambda x: (bids[x], len(reports[x]) if x in reports.keys() else 0, x), reverse=True)
+    return prioritized_agents[0] if len(prioritized_agents) > 0 else None
 
-    important_bidders = {}
-    for bidder in N_prime:
-        # if is important add the bidder and its bid to the dictionary
-        if (bids[bidder] >= p_prime):
-            important_bidders[bidder] = bids[bidder]
+def find_most_important_agent_gamma_2(bids, N_prime, reports):
+    # under the priority gamma_2, the priority of agent i is higher than agent j if:
+    return find_most_important_agent_gamma_1(bids, N_prime, reports)
 
-    # sort the dictionary by value and return the first element
-    # TODO: check if the values are equals and sort by number of neighbors in such a case
-    important_bidders = sorted(important_bidders.items(), key=lambda x: x[1], reverse=True)
+def remove_exhaused_agents(bids, marked_not_exhausted, p_prime):
+    to_remove = set()
+    for agent in marked_not_exhausted:
+        if bids[agent] < p_prime:
+            to_remove.add(agent)
+    marked_not_exhausted.difference_update(to_remove)
 
-    # take the bidders with the highest bid
-    important_bidders = [bidder for bidder in important_bidders if bidder[1] == important_bidders[0][1]]
+def find_first_critical_price(bids, marked_not_exhausted, k):
+    L = sorted([bids[agent] for agent in marked_not_exhausted])
+    change = {}
+    for elem in L:
+        if elem not in change.keys():
+            change[elem] = 1
+        else:
+            change[elem] += 1
+    # change -> {price: number of agents with that price}
+    L = sorted(set(L))
+    for value in L:
+        sum_agents_before = sum(change[item] for item in L if L.index(item) < L.index(value))
+        if sum_agents_before <= len(marked_not_exhausted) - k:
+            return value 
+    return None
 
-    # if there is one or more bidders with the same bid, sort them by number of neighbors
-    return sorted(important_bidders, key=lambda x: len(reports[x[0]]) if x[0] in reports.keys() else 0, reverse=True)
-
+def find_second_critical_price(bids, marked_not_exhausted, k):
+    L = sorted([bids[agent] for agent in marked_not_exhausted])
+    change = {}
+    for elem in L:
+        if elem not in change.keys():
+            change[elem] = 1
+        else:
+            change[elem] += 1
+    # change -> {price: number of agents with that price}
+    L = sorted(set(L))
+    for tentative_p in L:
+        is_important = len(marked_not_exhausted) - 1 < k and k <= len(marked_not_exhausted)
+        if not is_important:
+            sum_agents_before = sum(change[item] for item in L if item > tentative_p)
+            is_important = sum_agents_before - 1 < k and k <= sum_agents_before
+            if is_important:
+                return tentative_p
+    return None
+                
 def snca(k, seller_net, reports, bids):
-    """
-    # Parameters
-    k : int
-        Number of items to be sold.
-    seller_net : set
-        Set of strings, each idnetifying a different bidder.
-    reports : dict
-        Dictionary whose keys are strings each identifying a different bidder and whose
-        values are sets of strings representing the set of bidders to which the bidder identified by the
-        key reports the information about the auction.
-    bids : dict
-        Dictionary whose keys are strings each identifying a different bidder and whose
-        values are numbers defining the bid of the bidder identified by that key.
-
-    # Returns
-    allocation : dict
-        Dictionary that has as keys the strings identifying each of the bidders
-        that submitted a bid, and as value a boolean True if this bidder is allocated one of the items,
-        and False otherwise.
-    payments : dict
-        Dictionary that has as keys the strings identifying each of the bidders that
-        submitted a bid, and as value the price that she pays. Here, a positive price 
-        means that the bidder is paying to the seller, while a negative price means that 
-        the seller is paying to the bidder.
-    """
-
+    
     allocation = {bidder: False for bidder in seller_net}
     payments = {bidder: 0 for bidder in seller_net}
 
-    # choose random seller
-    seller = random.choice(list(seller_net))
-    # seller = 'b'
+    # seller = random.choice(list(seller_net))
+    seller = 'a'
+    unmarked = set(reports[seller]).union({seller})
+    exhausted = set(seller)
 
+    N_prime = set()
     if seller not in reports.keys():
         return allocation, payments
-    
+
     p_prime = bids[seller]
-    N_prime = set()
-    for neighbor in reports[seller]:
-        if bids[neighbor] >= p_prime:
-            N_prime.add(neighbor)
-    
-    i = 0
 
-    while (len(N_prime) > 0 and k > 0):
+    unmarked_exhausted = unmarked.intersection(exhausted)
 
-        tot_demand = sum(1 for bidder in N_prime if bids[bidder] >= p_prime)
+    while len(unmarked_exhausted) > 0 and k > 0:
 
-        if (k < tot_demand):
-            # UNDERSUPPLYING
-            available_bids = sorted([bids[bidder] for bidder in N_prime if bids[bidder] > p_prime], reverse=True)
-            # take all the bids with the highest value
-            available_bids = [bid for bid in available_bids if bid == available_bids[0]]
-            # sort them by number of neighbors
-            available_bids = sorted(available_bids, key=lambda x: len(reports[x]) if x in reports.keys() else 0, reverse=True)
-            
-            if len(available_bids) > 1:
-                p = available_bids[1]
-            else:
-                p = available_bids[0]   
+        print('unmarked_exhausted: ', unmarked_exhausted)
 
-        else: 
-            # OVERSUPPLYING
-            p = p_prime
-        
-        # detect important agents
-        important_bidders = find_important_bidder(bids, N_prime, p, reports)
+        for i in unmarked_exhausted:
+            unmarked.remove(i)
+            N_prime = N_prime.union(set(reports[i]))
+            for neighbor in reports[i]:
+                if bids[neighbor] < p_prime:
+                    exhausted.add(neighbor)
 
-        if (len(important_bidders) > 0):
+        most_important_agent = find_most_important_agent_gamma_1(bids, N_prime.difference(exhausted), reports)
+        print('most_important_agent: ', most_important_agent)
 
-            important_bidder = important_bidders[0][0]
-            payments[important_bidder] = p
-            allocation[important_bidder] = True
+        if most_important_agent is not None:
+            allocation[most_important_agent] = True
+            payments[most_important_agent] = p_prime
+            exhausted.add(most_important_agent)
+            print(payments[most_important_agent])
             k -= 1
 
-            # update the circumstance
-            if important_bidder in reports.keys():
-                for neighbor in reports[important_bidder]:
-                    if neighbor not in payments.keys():
-                        if bids[neighbor] >= p:
-                            N_prime.add(neighbor)
-            N_prime.remove(important_bidder)
+        unmarked_exhausted = unmarked.intersection(exhausted)
 
+    marked_not_exhausted = unmarked.difference(exhausted)
+
+    while len(marked_not_exhausted) > 0 and k > 0:
+
+        demand = sum(1 for _ in marked_not_exhausted)
+        # CASE 1: oversupplying
+        if k >= demand:
+            most_important_agent = find_most_important_agent_gamma_1(bids, marked_not_exhausted, reports)
+
+        else:
+            # CASE 2: undersupplying
+            second_critical_price = find_second_critical_price(bids, marked_not_exhausted, k)
+            print('second_critical_price: ', second_critical_price)
+            if second_critical_price is not None:
+                p_prime = second_critical_price
+                remove_exhaused_agents(bids, marked_not_exhausted, p_prime)
+                most_important_agent = find_most_important_agent_gamma_1(bids, marked_not_exhausted, reports)
+                
+            else:
+                first_critical_price = find_first_critical_price(bids, marked_not_exhausted, k)
+                print('first_critical_price: ', first_critical_price)
+                if first_critical_price is not None:
+                    p_prime = first_critical_price
+                    remove_exhaused_agents(bids, marked_not_exhausted, p_prime)
+                    most_important_agent = find_most_important_agent_gamma_2(bids, marked_not_exhausted, reports)
+        
+        print('most_important_agent: ', most_important_agent)
+        allocation[most_important_agent] = True
+        payments[most_important_agent] = p_prime
+        marked_not_exhausted.remove(most_important_agent)
+        k -= 1
+    
     return allocation, payments
 
 # test
@@ -112,9 +138,9 @@ if __name__ == '__main__':
     seller_net = {'a', 'b', 'c', 'd', 'e', 'f', 'g'}
 
     # dense graph
-    reports = {'a': {'b', 'c', 'd', 'e', 'f', 'g'}, 'b': {'a', 'c', 'd', 'e', 'f', 'g'}, 'c': {'a', 'b', 'd', 'e', 'f', 'g'}, 'd': {'a', 'b', 'c', 'e', 'f', 'g'}, 'e': {'a', 'b', 'c', 'd', 'f', 'g'}, 'f': {'a', 'b', 'c', 'd', 'e', 'g'}, 'g': {'a', 'b', 'c', 'd', 'e', 'f'}}
+    reports = {'a': {'b', 'c', 'd', 'e', 'f'}, 'b': {}, 'c': {}, 'd': {'e', 'f'}, 'e': {'f', 'g'}, 'f': {'g'}, 'g': {}}
     
-    bids = {'a': 10, 'b': 109, 'c': 368, 'd': 12, 'e': 56, 'f': 25, 'g': 104}
+    bids = {'a': 4, 'b': 5, 'c': 5, 'd': 6, 'e': 6, 'f': 7, 'g': 8}
 
     allocation, payments = snca(k, seller_net, reports, bids)
     print(allocation)
