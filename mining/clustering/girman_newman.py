@@ -93,30 +93,30 @@ def parallel_girman_newman(G, j=2, threshold=None):
 
 def parallel_heuristic_girman_newman(G, j=2, threshold=None):
     
-        graph=G.copy() 
-    
-        q = nx.algorithms.community.modularity(G,connected_components(graph))
-    
-        eb, nb = parallel_betweenness(graph, j)
-        pq = PriorityQueue()
-        for e in eb:
-            pq.add(e, -eb[e])
-    
-        done = False
-        while not done:
-            
-            edge=tuple(pq.pop())
-            if graph.has_edge(edge[0],edge[1]):
-                graph.remove_edge(edge[0],edge[1])
-    
-            newq = nx.algorithms.community.modularity(G,connected_components(graph))
-            if abs(newq) <= abs(q) or (threshold is not None and abs(newq) <= threshold):
-                graph.add_edge(edge[0],edge[1])
-                done = True
-            else:
-                q = newq
-    
-        return connected_components(graph)
+    graph=G.copy() 
+
+    q = nx.algorithms.community.modularity(G,connected_components(graph))
+
+    eb, nb = parallel_betweenness(graph, j)
+    pq = PriorityQueue()
+    for e in eb:
+        pq.add(e, -eb[e])
+
+    done = False
+    while not done:
+        
+        edge=tuple(pq.pop())
+        if graph.has_edge(edge[0],edge[1]):
+            graph.remove_edge(edge[0],edge[1])
+
+        newq = nx.algorithms.community.modularity(G,connected_components(graph))
+        if abs(newq) <= abs(q) or (threshold is not None and abs(newq) <= threshold):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+
+    return connected_components(graph)
 
 if __name__ == '__main__':
 
