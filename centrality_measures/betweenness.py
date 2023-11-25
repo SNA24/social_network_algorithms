@@ -2,22 +2,10 @@ import networkx as nx
 import math
 import itertools as it
 import networkx as nx
-from priorityq import PriorityQueue
 from joblib import Parallel, delayed
 # Computes edge and vertex betweenness of the graph in input
 # The algorithm is quite time-consuming. Indeed, its computational complexity is O(nm).
 # Possible optimizations: parallelization, sampling
-
-#Returns the top k nodes of G according to the centrality measure "measure"
-def top(G,measure,k):
-    pq = PriorityQueue()
-    cen=measure(G)
-    for u in G.nodes():
-        pq.add(u, -cen[u])  # We use negative value because PriorityQueue returns first values whose priority value is lower
-    out=[]
-    for i in range(k):
-        out.append(pq.pop())
-    return out
 
 #Utility used for split a vector data in chunks of the given size.
 def chunks(data, size):

@@ -60,7 +60,7 @@ def parallel_two_means(G, j=2):
     added = 2
 
     while added < n:
-        with Parallel(n_jobs = 2) as parallel:
+        with Parallel(n_jobs = j) as parallel:
             result = parallel(delayed(add_nodes_to_clusters)(X, cluster0, cluster1) for X in chunks(G.nodes(),math.ceil(len(G.nodes())/j)))
             for el in result:
                 cluster0.update(el[0])
