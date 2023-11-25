@@ -68,7 +68,7 @@ def heuristic_girman_newman(G, threshold=None):
 
     return connected_components(graph)
 
-def parallel_girman_newman(G, threshold=None):
+def parallel_girman_newman(G, j=2, threshold=None):
 
     graph=G.copy() # We make a copy of the graph. In this way we will modify the copy, but not the original graph
 
@@ -77,7 +77,7 @@ def parallel_girman_newman(G, threshold=None):
     done = False
     while not done:
 
-        eb, nb = parallel_betweenness(graph)
+        eb, nb = parallel_betweenness(graph, j)
         edge=tuple(max(eb, key=eb.get))
         if graph.has_edge(edge[0],edge[1]):
             graph.remove_edge(edge[0],edge[1])
@@ -91,13 +91,13 @@ def parallel_girman_newman(G, threshold=None):
 
     return connected_components(graph)
 
-def parallel_heuristic_girman_newman(G, threshold=None):
+def parallel_heuristic_girman_newman(G, j=2, threshold=None):
     
         graph=G.copy() 
     
         q = nx.algorithms.community.modularity(G,connected_components(graph))
     
-        eb, nb = parallel_betweenness(graph)
+        eb, nb = parallel_betweenness(graph, j)
         pq = PriorityQueue()
         for e in eb:
             pq.add(e, -eb[e])
