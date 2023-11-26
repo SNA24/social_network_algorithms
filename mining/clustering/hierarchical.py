@@ -24,7 +24,10 @@ def hierarchical(G):
     # This is one of the measures of quality of a partition implemented in networkx
     # Other measures are returned by nx.algorithms.community.partition_quality(G, clusters)
     # Please read the documentation for more information
-    q = nx.algorithms.community.modularity(G, clusters)
+    try:
+        q = nx.algorithms.community.modularity(G, clusters)
+    except:
+        return clusters
 
     done = False
     while not done:
@@ -44,7 +47,11 @@ def hierarchical(G):
 
         clusters.add(s[0] | s[1])
 
-        newq = nx.algorithms.community.modularity(G, clusters)
+        try: 
+            newq = nx.algorithms.community.modularity(G, clusters)
+        except:
+            return clusters
+        
         if abs(newq) > abs(q):
             done = True
         else:
@@ -80,7 +87,10 @@ def parallel_hierarchical(G, num_jobs=8):
     # This is one of the measures of quality of a partition implemented in networkx
     # Other measures are returned by nx.algorithms.community.partition_quality(G, clusters)
     # Please read the documentation for more information
-    q = nx.algorithms.community.modularity(G, clusters)
+    try:
+        q = nx.algorithms.community.modularity(G, clusters)
+    except:
+        return clusters
 
     done = False
     while not done:
@@ -101,7 +111,10 @@ def parallel_hierarchical(G, num_jobs=8):
 
         clusters.add(s[0] | s[1])
 
-        newq = nx.algorithms.community.modularity(G, clusters)
+        try:
+            newq = nx.algorithms.community.modularity(G, clusters)
+        except:
+            return clusters
         if abs(newq) > abs(q):
             done = True
         else:
