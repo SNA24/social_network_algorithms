@@ -36,3 +36,6 @@ class PriorityQueue:
                 del self.entry_finder[task]
                 return task
         raise KeyError('pop from an empty priority queue')
+
+    def __len__(self):
+        return len(self.entry_finder)
