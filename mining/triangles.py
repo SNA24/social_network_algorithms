@@ -17,101 +17,70 @@ def less(G, edge, directed = False):
         if G.degree(edge[0]) == G.degree(edge[1]) and edge[0] < edge[1]:
             return 0
         return 1
+    
+def count_triangles_among_hh(triple, G):
+    if G.is_directed():
+        return (G.has_edge(triple[0], triple[1]) and G.has_edge(triple[1], triple[2]) and 
+                G.has_edge(triple[2], triple[0]) or G.has_edge(triple[1], triple[0]) and 
+                G.has_edge(triple[0], triple[2]) and G.has_edge(triple[2], triple[1]))
+    else:
+        return (G.has_edge(triple[0], triple[1]) and G.has_edge(triple[1], triple[2]) and 
+                G.has_edge(triple[2], triple[0]))
 
-
-def num_triangles(G, directed = False):
+def count_triangles_for_edge(G, edge, heavy_hitters):
     num_triangles = 0
-    m = nx.number_of_edges(G)
-
-    heavy_hitters = set()
-    for u in G.nodes():
-        if G.degree(u) >= math.sqrt(m):
-            heavy_hitters.add(u)
-
-    for c in it.combinations(heavy_hitters, 3):
-        if directed:
-            for triple in it.permutations(c):
-            # For undirected graphs, check if the triple forms a triangle.
-                if G.has_edge(triple[0], triple[1]) and G.has_edge(triple[1], triple[2]) and G.has_edge(triple[2], triple[0]):
+    sel = less(G, edge, G.is_directed())
+    if edge[sel] not in heavy_hitters:
+        for u in G[edge[sel]]:
+            if G.is_directed():
+                if less(G, [u, edge[1 - sel]], G.is_directed()) and G.has_edge(edge[sel], edge[1 - sel]):
                     num_triangles += 1
-            num_triangles /= 3
-        else:        
-            # For directed graphs, check if the triple forms a directed triangle.
-            if G.has_edge(c[0], c[1]) and G.has_edge(c[1], c[2]) and G.has_edge(c[0], c[2]):
-                num_triangles += 1
-            
-    for edge in G.edges():
-        sel = less(G, edge,directed)
-        if edge[sel] not in heavy_hitters:
-            #arco tra il primo e il secondo nodo
-            for u in G[edge[sel]]:
-                if directed:
-                    #arco tra il secondo e il terzo nodo
-                    if less(G, [u, edge[1 - sel]], directed) and G.has_edge(edge[sel], edge[1 - sel]):
-                        num_triangles += 1
-                else:
-                    if less(G, [u, edge[1 - sel]],directed) and G.has_edge(u, edge[1 - sel]):
-                        num_triangles += 1
+            else:
+                if less(G, [u, edge[1 - sel]], G.is_directed()) and G.has_edge(u, edge[1 - sel]):
+                    num_triangles += 1
     return num_triangles
 
+def num_triangles(G):
 
-#parallel implementation for counting triangles
-def count_triangle(G, triangle_candidates, directed = False):
-    num_triangles = 0
-
-    for c in triangle_candidates:
-        if directed:
-            for triple in it.permutations(c):
-            # For undirected graphs, check if the triple forms a triangle.
-                if G.has_edge(triple[0], triple[1]) and G.has_edge(triple[1], triple[2]) and G.has_edge(triple[2], triple[0]):
-                    num_triangles += 1
-            num_triangles /= 3
-        else:        
-            # For directed graphs, check if the triple forms a directed triangle.
-            if G.has_edge(c[0], c[1]) and G.has_edge(c[1], c[2]) and G.has_edge(c[0], c[2]):
-                num_triangles += 1
-    return num_triangles
-
-def num_triangles_parallel(G, j, directed = False):
     num_triangles = 0
 
     m = nx.number_of_edges(G)
     heavy_hitters = set()
 
-    for u in G.nodes():
-        if G.degree(u) >= math.sqrt(m):
-            heavy_hitters.add(u)
+    heavy_hitters = {u for u in G.nodes() if G.degree(u) >= math.sqrt(m)}
 
-    triangle_candidates = list(it.combinations(heavy_hitters, 3))
-    size = math.ceil(len(list(triangle_candidates))/j)
-    # Each process counts the triangles in a subset of triangle_candidates
-    with Parallel(n_jobs = j) as parallel:
-        # Run in parallel diameter function on each processor by passing to each processor only the subset of nodes on which it works
-        
-        #print(triangle_candidates[i:i+size] for i in range(j))
-        result = parallel(delayed(count_triangle)(G, triangle_candidates[i:i+size],directed) for i in range(j))
-        # Aggregates the results
-        num_triangles = sum(result)
+    hh_triples = it.combinations(heavy_hitters, 3)
+    for triple in hh_triples:
+        if count_triangles_among_hh(triple, G):
+            num_triangles += 1
 
     for edge in G.edges():
-        sel = less(G, edge,directed)
-        if edge[sel] not in heavy_hitters:
-            for u in G[edge[sel]]:
-                if directed:
-                    '''print(edge[sel], u, edge[1 - sel])
-                    print(less(G, [u, edge[1 - sel]], directed))
-                    print(G.has_edge(edge[sel], edge[1 - sel]))'''
-                    if less(G, [u, edge[1 - sel]], directed) and G.has_edge(edge[sel], edge[1 - sel]):
-                        num_triangles += 1
-                else:
-                    if less(G, [u, edge[1 - sel]],directed) and G.has_edge(u, edge[1 - sel]):
-                        num_triangles += 1
+        num_triangles += count_triangles_for_edge(G, edge, heavy_hitters)
+
     return num_triangles
 
+def num_triangles_parallel(G, j=2):
 
+    num_triangles = 0
+
+    m = nx.number_of_edges(G)
+    heavy_hitters = set()
+
+    heavy_hitters = {u for u in G.nodes() if G.degree(u) >= math.sqrt(m)}
+
+    hh_triples = it.combinations(heavy_hitters, 3)
+    triangles_among_hh = Parallel(n_jobs=j)(delayed(count_triangles_among_hh)(triple, G) for triple in hh_triples)
+    num_triangles += sum(triangles_among_hh)
+
+    edge_triangles = Parallel(n_jobs=j)(delayed(count_triangles_for_edge)(G, edge, heavy_hitters) for edge in G.edges())
+    num_triangles += sum(edge_triangles)
+
+    return num_triangles
 
 if __name__ == '__main__':
-    print("GRAFO DIRETTO")
+
+    print("Undirected graph")
+    G=nx.Graph()
     G=nx.DiGraph()
     G.add_edge('A', 'B')
     G.add_edge('C', 'A')
@@ -123,13 +92,23 @@ if __name__ == '__main__':
     G.add_edge('E', 'F')
     G.add_edge('F', 'D')
 
-    
-    triang = num_triangles(G,directed=True)
-    print("Naive implementation")
-    print(triang)
+    print("Optimized implementation", num_triangles(G))
+    print("Parallel implementation", num_triangles_parallel(G, 4))
 
-    print("Parallel implementation")
-    print(num_triangles_parallel(G,2,directed=True))
+    print("Directed graph")
+    G=nx.DiGraph()
+    G.add_edge('A', 'B')
+    G.add_edge('C', 'A')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'A')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'D')
+    
+    print("Optimized implementation", num_triangles(G))
+    print("Parallel implementation", num_triangles_parallel(G, 4))
 
     # Visualizzazione del grafo
     pos = nx.spring_layout(G, seed=42)

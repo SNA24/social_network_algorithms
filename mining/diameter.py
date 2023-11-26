@@ -104,7 +104,7 @@ def stream_diam(G):
     return step
 
 if __name__ == '__main__':
-    print("Diametro grafo non diretto")
+    print("Directed graph")
     G=nx.Graph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     print("Parallel diameter: ", parallel_diam(G, 4))
     print("Stream diameter: ", stream_diam(G))
 
-    print("Diametro grafo diretto")
+    print("Undirected graph")
     G=nx.DiGraph()
     G.add_edge('A', 'B')
     G.add_edge('A', 'C')
