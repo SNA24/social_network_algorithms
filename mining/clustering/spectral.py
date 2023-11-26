@@ -62,7 +62,8 @@ def split_list_and_eigenvector(nodes, j, v):
         # check if we are at the end of the list
         if i+step > n:
             yield nodes[i:], v[i:]
-        yield nodes[i:i+step], v[i:i+step]
+        else:
+            yield nodes[i:i+step], v[i:i+step]
 
 def split_list(nodes, j):
     n = len(nodes)
@@ -71,7 +72,8 @@ def split_list(nodes, j):
         # check if we are at the end of the list
         if i+step > n:
             yield i, n
-        yield i, i+step
+        else:
+            yield i, i+step
 
 def spectral_parallel(G, j=2):
     n = G.number_of_nodes()
