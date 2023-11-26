@@ -94,7 +94,7 @@ def spectral_parallel(G, j=2):
 
     return (c1, c2)
 
-def spectral_multi_cluster(G, num_clusters=4):
+def spectral_multi_cluster(G):
     n = G.number_of_nodes()
     nodes = sorted(G.nodes())
     L = laplacian_matrix(G).astype('f')
@@ -222,9 +222,9 @@ if __name__ == '__main__':
 
     print("SPECTRAL", spectral(G))
     print("SPECTRAL PARALLEL", spectral_parallel(G, jobs))
-    print("SPECTRAL MULTI CLUSTER", spectral_multi_cluster(G, 4))
+    print("SPECTRAL MULTI CLUSTER", spectral_multi_cluster(G))
     print("SPECTRAL MULTI CLUSTER PARALLEL", spectral_multi_cluster_parallel(G, jobs))
-    print("SPECTRAL MULTI CLUSTER V2", spectral_multi_cluster_v2(G, 4))
+    print("SPECTRAL MULTI CLUSTER V2", spectral_multi_cluster_v2(G))
     print("SPECTRAL MULTI CLUSTER V2 PARALLEL", spectral_multi_cluster_v2_parallel(G, jobs))
 
     print("Directed graph")
@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
     print("SPECTRAL", spectral(G))
     print("SPECTRAL PARALLEL", spectral_parallel(G, jobs))
-    print("SPECTRAL MULTI CLUSTER", spectral_multi_cluster(G, 4))
+    print("SPECTRAL MULTI CLUSTER", spectral_multi_cluster(G))
     print("SPECTRAL MULTI CLUSTER PARALLEL", spectral_multi_cluster_parallel(G, jobs))
-    print("SPECTRAL MULTI CLUSTER V2", spectral_multi_cluster_v2(G, 4))
+    print("SPECTRAL MULTI CLUSTER V2", spectral_multi_cluster_v2(G))
     print("SPECTRAL MULTI CLUSTER V2 PARALLEL", spectral_multi_cluster_v2_parallel(G, jobs))
