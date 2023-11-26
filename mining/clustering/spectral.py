@@ -6,6 +6,7 @@ import networkx as nx
 from scipy.sparse import linalg
 from joblib import Parallel, delayed
 from utilities.parallel_algorithms import laplacian_matrix
+import math
 
 #Spectral clustering algorithm
 def spectral(G):
@@ -39,11 +40,6 @@ def spectral(G):
         else:
             c2.add(nodes[i])
 
-    # How to achieve more than two clusters? Two options:
-    # (i) for each subgraph corresponding to one of the clusters, we can split this subgraph by running the spectral algorithm on it;
-    # (ii) we can use further eigenvectors. For example, we can partition nodes in four clusters by using the first two eigenvectors,
-    #     so that the first (second, respectively) cluster contains those nodes i such that v[i,0] and v[i,1] are both negative (both non-negative, resp.)
-    #     while the third (fourth, respectively) cluster contains those nodes i such that only v[i,0] (only v[i,1], resp.) is negative.
     return (c1, c2)
 
 def partition_into_clusters(nodes, v):
@@ -68,6 +64,15 @@ def split_list_and_eigenvector(nodes, j, v):
             yield nodes[i:], v[i:]
         yield nodes[i:i+step], v[i:i+step]
 
+def split_list(nodes, j):
+    n = len(nodes)
+    step = n // j
+    for i in range(0, n, step):
+        # check if we are at the end of the list
+        if i+step > n:
+            yield i, n
+        yield i, i+step
+
 def spectral_parallel(G, j=2):
     n = G.number_of_nodes()
     nodes = sorted(G.nodes())
@@ -89,9 +94,118 @@ def spectral_parallel(G, j=2):
 
     return (c1, c2)
 
+def spectral_multi_cluster(G, num_clusters=4):
+    n = G.number_of_nodes()
+    nodes = sorted(G.nodes())
+    L = laplacian_matrix(G).astype('f')
+    w, v = linalg.eigsh(L, n-1)
+
+    c1 = set()
+    c2 = set()
+
+    for i in range(n):
+        if v[i,0] < 0:
+            c1.add(nodes[i])
+        else:
+            c2.add(nodes[i])
+
+    if len(c1) > 1:
+        c1 = spectral(nx.subgraph(G, c1))
+    if len(c2) > 1:
+        c2 = spectral(nx.subgraph(G, c2))
+
+    # merge the tuples of clusters
+    return c1 + c2
+
+def spectral_multi_cluster_parallel(G, j=2):
+    n = G.number_of_nodes()
+    nodes = sorted(G.nodes())
+
+    L=laplacian_matrix(G).astype('f')
+    w, v = linalg.eigsh(L,n-1)
+
+    # if j is greater than the number of nodes, set j to the number of nodes
+    if j > n:
+        j = n
+
+    with Parallel(n_jobs=j) as parallel:
+        results = parallel(delayed(partition_into_clusters)(nodes, v) for nodes, v in split_list_and_eigenvector(nodes, j, v) for j in range(n))
+        c1 = set()
+        c2 = set()
+        for c1_, c2_ in results:
+            c1.update(c1_)
+            c2.update(c2_)
+
+    if len(c1) > 1:
+        c1 = spectral_parallel(nx.subgraph(G, c1))
+    if len(c2) > 1:
+        c2 = spectral_parallel(nx.subgraph(G, c2))
+
+    return c1 + c2
+
+def compute_cluster_index(signs):
+    # Convert binary representation to decimal representation
+    cluster_index = 0
+    for i in range(len(signs)):
+        cluster_index += signs[i] * (2 ** i)
+    return cluster_index
+
+def spectral_multi_cluster_v2(G, num_clusters=4):
+    n = G.number_of_nodes()
+
+    # check if num_clusters is a perfect square
+    if math.sqrt(num_clusters) % 1 != 0:
+        # set num_clusters to the next perfect square
+        num_clusters = int(math.ceil(math.sqrt(num_clusters)) ** 2)
+    
+    nodes = sorted(G.nodes())
+    L = laplacian_matrix(G).astype('f')
+    w, v = linalg.eigsh(L, n-1)
+
+    num_eigenvectors = int(math.sqrt(num_clusters))
+
+    clusters = [set() for _ in range(num_clusters)]
+    for i in range(n):
+        signs = [1 if v[i, j] >= 0 else 0 for j in range(num_eigenvectors)]
+        cluster_index = compute_cluster_index(signs)
+        clusters[cluster_index].add(nodes[i])
+
+    return [cluster for cluster in clusters if len(cluster) > 0]
+
+def populate_clusters(v, num_eigenvectors, nodes, clusters, start_i, stop_i):
+    for i in range(start_i, stop_i):
+        signs = [1 if v[i, j] >= 0 else 0 for j in range(num_eigenvectors)]
+        cluster_index = compute_cluster_index(signs)
+        clusters[cluster_index].add(nodes[i])
+    return clusters
+
+def spectral_multi_cluster_v2_parallel(G, j=2, num_clusters=4):
+    n = G.number_of_nodes()
+    
+    # check if num_clusters is a perfect square
+    if math.sqrt(num_clusters) % 1 != 0:
+        # set num_clusters to the next perfect square
+        num_clusters = int(math.ceil(math.sqrt(num_clusters)) ** 2)
+    
+    nodes = sorted(G.nodes())
+    L = laplacian_matrix(G).astype('f')
+    w, v = linalg.eigsh(L, n-1)
+
+    num_eigenvectors = int(math.sqrt(num_clusters))
+
+    clusters = [set() for _ in range(num_clusters)]
+
+    with Parallel(n_jobs=j) as parallel:
+        clus = parallel(delayed(populate_clusters)(v, num_eigenvectors, nodes, clusters, start_i, stop_i) for start_i, stop_i in split_list(nodes, j))
+        for cluster in clus:
+            for i in range(len(cluster)):
+                clusters[i].update(cluster[i])
+
+    return [cluster for cluster in clusters if len(cluster) > 0]
+    
 if __name__ == '__main__':
 
-    jobs = 16
+    jobs = 6
 
     print("Undirected graph")
 
@@ -108,6 +222,10 @@ if __name__ == '__main__':
 
     print("SPECTRAL", spectral(G))
     print("SPECTRAL PARALLEL", spectral_parallel(G, jobs))
+    print("SPECTRAL MULTI CLUSTER", spectral_multi_cluster(G, 4))
+    print("SPECTRAL MULTI CLUSTER PARALLEL", spectral_multi_cluster_parallel(G, jobs))
+    print("SPECTRAL MULTI CLUSTER V2", spectral_multi_cluster_v2(G, 4))
+    print("SPECTRAL MULTI CLUSTER V2 PARALLEL", spectral_multi_cluster_v2_parallel(G, jobs))
 
     print("Directed graph")
 
@@ -124,3 +242,7 @@ if __name__ == '__main__':
 
     print("SPECTRAL", spectral(G))
     print("SPECTRAL PARALLEL", spectral_parallel(G, jobs))
+    print("SPECTRAL MULTI CLUSTER", spectral_multi_cluster(G, 4))
+    print("SPECTRAL MULTI CLUSTER PARALLEL", spectral_multi_cluster_parallel(G, jobs))
+    print("SPECTRAL MULTI CLUSTER V2", spectral_multi_cluster_v2(G, 4))
+    print("SPECTRAL MULTI CLUSTER V2 PARALLEL", spectral_multi_cluster_v2_parallel(G, jobs))
