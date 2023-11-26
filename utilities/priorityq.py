@@ -24,15 +24,27 @@ class PriorityQueue:
 
     def remove(self, task):
         'Mark an existing task as REMOVED.  Raise KeyError if not found.'
-        entry = self.entry_finder.pop(task)
-        entry[-1] = REMOVED
-        return entry[0]
+        if task in self.entry_finder:
+            entry = self.entry_finder.pop(task)
+            entry[-1] = REMOVED
+            return entry[0]
+        else:
+            # Gestione della situazione in cui il task non è presente
+            raise KeyError(f'Task {task} not found in priority queue')
 
     def pop(self):
         'Remove and return the lowest priority task. Raise KeyError if empty.'
         while self.pq:
             priority, count, task = heappop(self.pq)
-            if task is not REMOVED:
+            if task != REMOVED:
                 del self.entry_finder[task]
                 return task
         raise KeyError('pop from an empty priority queue')
+
+    @classmethod    
+    def merge_queues(cls, *queues):
+        merged = cls()
+        for queue in queues:
+            for entry in queue.pq:
+                merged.add(entry[2], entry[0])
+        return merged
