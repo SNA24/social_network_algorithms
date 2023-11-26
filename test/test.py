@@ -1,7 +1,7 @@
-# read ucidata-zachary/out.ucidata-zachary
-
 import networkx as nx
-import os, sys
+import os, sys, time
+import pandas as pd
+
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
@@ -12,9 +12,52 @@ from mining.clustering.spectral import spectral, spectral_parallel, spectral_mul
 from mining.clustering.two_means import two_means, parallel_two_means
 from mining.clustering.hierarchical import hierarchical, parallel_hierarchical
 
+to_test = {
+    # diameter: False,
+    # parallel_diam: True,
+    stream_diam: False,
+    num_triangles: False,
+    num_triangles_parallel: True,
+    girman_newman: False,
+    heuristic_girman_newman: False,
+    parallel_girman_newman: True,
+    parallel_heuristic_girman_newman: True,
+    spectral: False,
+    spectral_parallel: True,
+    spectral_multi_cluster: False,
+    spectral_multi_cluster_parallel: True,
+    spectral_multi_cluster_v2: False,
+    spectral_multi_cluster_v2_parallel: True,
+    hierarchical: False,
+    parallel_hierarchical: True,
+    two_means: False,
+    parallel_two_means: True
+}
+
+def test_network(G, name, to_test, topic):
+
+    num_jobs = [2, 4, 6, 8, 10, 12, 14, 16]
+
+    dataframe = pd.DataFrame(columns=['function', 'num_jobs', 'execution_time'])
+    
+    for func, parallel in to_test.items():
+        if parallel:
+            for j in num_jobs:
+                start = time.time()
+                func(G, j)
+                end = time.time()
+                dataframe = dataframe._append({'function': func.__name__, 'num_jobs': j, 'execution_time': end - start}, ignore_index=True)
+        else:
+            start = time.time()
+            func(G)
+            end = time.time()
+            dataframe = dataframe._append({'function': func.__name__, 'num_jobs': 1, 'execution_time': end - start}, ignore_index=True)
+        
+    dataframe.to_csv(f'test/{topic}_results_{name}.csv', index=False)
+
 if __name__ == '__main__':
 
-    G = nx.Graph()
+    zachary = nx.Graph()
     with open('test/ucidata-zachary/out.ucidata-zachary') as f:
         lines = f.readlines()
         lines = lines[2:]
@@ -22,32 +65,13 @@ if __name__ == '__main__':
             line = line.strip().split(' ')
             from_node = line[0]
             to_node = line[1]
-            G.add_edge(from_node, to_node)
+            zachary.add_edge(from_node, to_node)
 
-    print(G.number_of_nodes())
+    graphs = {
+        'zachary': zachary
+    }
 
-    print("Stream diameter: ", stream_diam(G))
-    print("Triangles: ", num_triangles(G))
-    print("Parallel triangles: ", num_triangles_parallel(G, 4))
-
-    print("Clusterings: ")
-
-    print("Girman-Newman: ", girman_newman(G))
-    print("Heuristic Girman-Newman: ", heuristic_girman_newman(G))
-    print("Parallel Girman-Newman: ", parallel_girman_newman(G, 4))
-    print("Parallel Heuristic Girman-Newman: ", parallel_heuristic_girman_newman(G, 4))
-
-    print("Spectral: ", spectral(G))
-    print("Parallel Spectral: ", spectral_parallel(G, 4))
-    print("Multi-cluster Spectral: ", spectral_multi_cluster(G))
-    print("Parallel Multi-cluster Spectral: ", spectral_multi_cluster_parallel(G, 4))
-    print("Multi-cluster Spectral v2: ", spectral_multi_cluster_v2(G))
-    # print("Parallel Multi-cluster Spectral v2: ", spectral_multi_cluster_v2_parallel(G, 4))
-
-    print("Hierarchical: ", hierarchical(G))
-    print("Parallel Hierarchical: ", parallel_hierarchical(G, 4))
-
-    print("Two-means: ", two_means(G))
-    print("Parallel Two-means: ", parallel_two_means(G, 4))
+    for name, G in graphs.items():
+        test_network(G, name, to_test, 'mining')
 
         
