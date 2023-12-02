@@ -14,7 +14,7 @@ from utilities.parallel_algorithms import chunks, split_list, neighbors, degree
 # Moreover, we decrease the weight of the votes issued by the neighbors of the elected node (hence, not only the elected node does not vote, but the vote of its neighbors are less influent)
 # By convention, the weight of these nodes is decreased of an amount f = 1 / average degree of the network
 # For more information see Zhang et al. (Nature 2016).
-def voterank(G):
+def vote_rank(G):
     G = nx.DiGraph(G)
     rank = dict()
 
@@ -68,7 +68,7 @@ def update(neighbors, ability, f):
     return new_ability
 
 # PARLLELIZATION
-def parallel_voterank(G, n_jobs=2):
+def parallel_vote_rank(G, n_jobs=2):
 
     G = nx.DiGraph(G)
     rank = dict()
@@ -122,9 +122,9 @@ if __name__ == '__main__':
 
     n_jobs = 5
     print("voterank")
-    print(sorted(voterank(G).items(), key=lambda x: x[1]))
+    print(sorted(vote_rank(G).items(), key=lambda x: x[1]))
     print("parallel_voterank with {} jobs".format(n_jobs))
-    print(sorted(parallel_voterank(G,n_jobs).items(), key=lambda x: x[1]))
+    print(sorted(parallel_vote_rank(G,n_jobs).items(), key=lambda x: x[1]))
 
     G = nx.DiGraph()
     G.add_edge('A', 'B')
@@ -138,6 +138,6 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
 
     print("voterank")
-    print(sorted(voterank(G).items(), key=lambda x: x[1]))
+    print(sorted(vote_rank(G).items(), key=lambda x: x[1]))
     print("parallel_voterank with {} jobs".format(n_jobs))
-    print(sorted(parallel_voterank(G,n_jobs).items(), key=lambda x: x[1]))
+    print(sorted(parallel_vote_rank(G,n_jobs).items(), key=lambda x: x[1]))
