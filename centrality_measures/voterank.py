@@ -1,17 +1,11 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 from joblib import Parallel, delayed
 import networkx as nx
-import itertools as it
 import math
-
-#Utility used for split a vector data in chunks of the given size.
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
-
-def split_list(lst, chunk_size):
-    for i in range(0, len(lst), chunk_size):
-        yield lst[i:i + chunk_size]
+from utilities.parallel_algorithms import chunks, split_list, neighbors, degree
 
 #VOTERANK
 # The following is an extension of degree centrality, that tries to avoid to choose nodes that are too close each other
@@ -25,7 +19,7 @@ def voterank(G):
     rank = dict()
 
     n = G.number_of_nodes()
-    avg_deg = sum(G.degree(v) for v in G.nodes())/n # It computes the average degree of the network
+    avg_deg = sum(degree(G,v) for v in G.nodes())/n # It computes the average degree of the network
     f = 1/avg_deg # It sets the decrement of weight in the network
 
     ability = {i : 1 for i in G.nodes()} # Initially the vote of each node weights 1
@@ -35,7 +29,7 @@ def voterank(G):
         score = {i : 0 for i in G.nodes() if i not in rank.keys()}
 
         for u in score.keys():
-            for v in G[u]:
+            for v in neighbors(G,u):
                 if v not in rank.keys():
                     # the score of a node is the sum of the vote weights of the neigbors of this node that have not been elected yet
                     score[v] += ability[u]
@@ -57,7 +51,7 @@ def vote (G, score, elected, ability):
     new_score = {i : 0 for i in G.nodes() if i not in elected}
 
     for u in score.keys():
-        for v in G[u]:
+        for v in neighbors(G,u):
             if v not in elected:
                 # the score of a node is the sum of the vote weights of the neigbors of this node that have not been elected yet
                 new_score[v] += ability[u]
@@ -74,13 +68,13 @@ def update(neighbors, ability, f):
     return new_ability
 
 # PARLLELIZATION
-def parallelVoterank(G, n_jobs=2):
+def parallel_voterank(G, n_jobs=2):
 
     G = nx.DiGraph(G)
     rank = dict()
 
     n = G.number_of_nodes()
-    avg_deg = sum(G.degree(v) for v in G.nodes()) / n
+    avg_deg = sum(degree(G,v) for v in G.nodes()) / n
     f = 1 / avg_deg
     ability = {i: 1 for i in G.nodes()}
 
@@ -130,4 +124,20 @@ if __name__ == '__main__':
     print("voterank")
     print(sorted(voterank(G).items(), key=lambda x: x[1]))
     print("parallel_voterank with {} jobs".format(n_jobs))
-    print(sorted(parallelVoterank(G,n_jobs).items(), key=lambda x: x[1]))
+    print(sorted(parallel_voterank(G,n_jobs).items(), key=lambda x: x[1]))
+
+    G = nx.DiGraph()
+    G.add_edge('A', 'B')
+    G.add_edge('A', 'C')
+    G.add_edge('B', 'C')
+    G.add_edge('B', 'D')
+    G.add_edge('D', 'E')
+    G.add_edge('D', 'F')
+    G.add_edge('D', 'G')
+    G.add_edge('E', 'F')
+    G.add_edge('F', 'G')
+
+    print("voterank")
+    print(sorted(voterank(G).items(), key=lambda x: x[1]))
+    print("parallel_voterank with {} jobs".format(n_jobs))
+    print(sorted(parallel_voterank(G,n_jobs).items(), key=lambda x: x[1]))

@@ -1,30 +1,13 @@
-import networkx as nx
-from priorityq import PriorityQueue
-from math import exp
-import networkx as nx
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 import math
-import itertools as it
 import networkx as nx
-from priorityq import PriorityQueue
 from joblib import Parallel, delayed
+from utilities.parallel_algorithms import chunks
 
 #CENTRALITY MEASURES
-#Returns the top k nodes of G according to the centrality measure "measure"
-def top(G,measure,k):
-    pq = PriorityQueue()
-    cen=measure(G)
-    for u in G.nodes():
-        pq.add(u, -cen[u])  # We use negative value because PriorityQueue returns first values whose priority value is lower
-    out=[]
-    for i in range(k):
-        out.append(pq.pop())
-    return out
-
-#Utility used for split a vector data in chunks of the given size.
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
 
 def inverse(degree):
     """
@@ -35,7 +18,6 @@ def inverse(degree):
     """
     return 1/degree
 
-
 def exponential_decay(degree, lambda_value=0.1):
     """
     # INPUT
@@ -44,7 +26,7 @@ def exponential_decay(degree, lambda_value=0.1):
     # OUTPUT
     - f(degree) = e^(-lambda_value*degree)
     """
-    return exp(-lambda_value*degree)
+    return math.exp(-lambda_value*degree)
 
 def power_law(degree, alpha=0.1):
     """
@@ -56,7 +38,7 @@ def power_law(degree, alpha=0.1):
     """
     return degree**(-alpha)
 
-def shapleycloseness(G, sample = None):
+def shapley_closeness(G, sample = None):
     """ 
     # INPUT
     - G is a networkx graph
@@ -81,6 +63,7 @@ def shapleycloseness(G, sample = None):
         prevSV = -1
 
         while index > 0:
+            
             if D[index] == prevDistance:
                 currSV = prevSV
             else:
@@ -98,7 +81,7 @@ def shapleycloseness(G, sample = None):
 def parallel_shapley_closeness(G, j=4):
 
     with Parallel(n_jobs=j) as parallel:
-        SV = parallel(delayed(shapleycloseness)(G, chunk) for chunk in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
+        SV = parallel(delayed(shapley_closeness)(G, chunk) for chunk in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
 
     return {k: sum([sv[k] for sv in SV]) for k in SV[0]}
 
@@ -117,9 +100,9 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
     # print the two centrality measures sorted by value
     print("Shapley Closeness Centrality")
-    print(top(G, shapleycloseness, 7))
+    print(sorted(shapley_closeness(G).items(), key=lambda x: x[1], reverse=True))
     print("Parallel Shapley Closeness Centrality")
-    print(top(G, parallel_shapley_closeness, 7))
+    print(sorted(parallel_shapley_closeness(G).items(), key=lambda x: x[1], reverse=True))
 
     print("Directed")
     G = nx.DiGraph()
@@ -134,7 +117,7 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
     # print the two centrality measures sorted by value
     print("Shapley Closeness Centrality")
-    print(top(G, shapleycloseness, 7))
+    print(sorted(shapley_closeness(G).items(), key=lambda x: x[1], reverse=True))
     print("Parallel Shapley Closeness Centrality")
-    print(top(G, parallel_shapley_closeness, 7))
+    print(sorted(parallel_shapley_closeness(G).items(), key=lambda x: x[1], reverse=True))
     

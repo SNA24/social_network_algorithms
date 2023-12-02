@@ -12,12 +12,6 @@ def neighbors(G, node):
     else:
         return set(G.neighbors(node))
     
-def neighbors2(G, node):
-    if G.is_directed():
-        return set(G.successors(node))
-    else:
-        return set(G.neighbors(node))
-    
 def connected_components(G):
     if G.is_directed():
         return list(nx.strongly_connected_components(G))
@@ -40,3 +34,9 @@ def chunks(data, size):
     idata=iter(data)
     for i in range(0, len(data), size):
         yield {k:data[k] for k in it.islice(idata, size)}
+
+def split_list(lst, chunk_size):
+    if len(lst) == 0:
+        return []
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
