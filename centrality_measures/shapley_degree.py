@@ -1,12 +1,12 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 import networkx as nx
 import math
 import itertools as it
 from joblib import Parallel, delayed
-
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
+from utilities.parallel_algorithms import chunks
 
 # SHAPLEY DEGREE
 # Compute the Shapley value for a characteristic function that extends degree centrality to coalitions.
@@ -19,7 +19,7 @@ def shapley_degree(G, sample = None):
     if sample is None:
         sample = G.nodes()
 
-    if not nx.is_directed(G):
+    if not G.is_directed():
 
         SV = {i:1/(1+G.degree(i)) for i in sample}
 
@@ -31,28 +31,45 @@ def shapley_degree(G, sample = None):
     
     else:
 
+        SV_in = {i:1/(1+G.in_degree(i)) for i in sample}
         SV_out = {i:1/(1+G.out_degree(i)) for i in sample}
 
         for u in sample:
             for v in G[u]:
+                SV_in[u] += 1/(1+G.in_degree(v))
                 SV_out[u] += 1/(1+G.out_degree(v))
 
-        return SV_out
+        return SV_in, SV_out
 
-
-# PARALLELIZATION
 def parallel_shapley_degree(G, j=4):
 
-    with Parallel(n_jobs=j) as parallel:
-        SV = parallel(delayed(shapley_degree)(G, sample) for sample in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
+    if not G.is_directed():
 
-    # Merge the results
-    SV_final = {}
-    for sv in SV:
-        SV_final.update(sv)
+        with Parallel(n_jobs=j) as parallel:
+            SV = parallel(delayed(shapley_degree)(G, sample) for sample in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
 
-    return SV_final
+        # Merge the results
+        SV_final = {}
+        for sv in SV:
+            SV_final.update(sv)
 
+        return SV_final
+
+    else:
+
+        with Parallel(n_jobs=j) as parallel:
+            SV_in, SV_out = zip(*parallel(delayed(shapley_degree)(G, sample) for sample in chunks(G.nodes(), math.ceil(len(G.nodes())/j))))
+
+        # Merge the results
+        SV_in_final = {}
+        for sv in SV_in:
+            SV_in_final.update(sv)
+
+        SV_out_final = {}
+        for sv in SV_out:
+            SV_out_final.update(sv)
+
+        return SV_in_final, SV_out_final
 
 if __name__ == '__main__':
     G = nx.Graph()
@@ -86,8 +103,11 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
 
     print("shapley_degree")
-    sd = shapley_degree(G)
-    print(sorted(sd.items(), key=lambda x: x[1], reverse=True))
+    in_sd, out_sd = shapley_degree(G)
+    print("in", sorted(in_sd.items(), key=lambda x: x[1], reverse=True))
+    print("out", sorted(out_sd.items(), key=lambda x: x[1], reverse=True))
+
     print("parallel_shapley_degree")
-    psd = parallel_shapley_degree(G)
-    print(sorted(psd.items(), key=lambda x: x[1], reverse=True))
+    in_psd, out_psd = parallel_shapley_degree(G)
+    print("in", sorted(in_psd.items(), key=lambda x: x[1], reverse=True))
+    print("out", sorted(out_psd.items(), key=lambda x: x[1], reverse=True))
