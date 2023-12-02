@@ -1,12 +1,11 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 import networkx as nx
 import math
-import itertools as it
 from joblib import Parallel, delayed
-
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
+from utilities.parallel_algorithms import chunks
 
 # SHAPLEY THRESHOLD
 # Consider another extension of degree centrality.
@@ -29,29 +28,52 @@ def shapley_threshold(G, k=2, sample = None):
                 weight = max(0,(G.degree(u) - k + 1)/G.degree(u))
                 SV[u] += weight * 1/(1+G.degree(v))
 
+        return SV
+
     else: 
 
-        SV = {i:min(1,k/(1+G.out_degree(i))) for i in sample}
+        SV_in = {i:min(1,k/(1+G.in_degree(i))) for i in sample}
+        SV_out = {i:min(1,k/(1+G.out_degree(i))) for i in sample}
 
         for u in sample:
-            for v in G[u]:
+            for v in G.successors(u):
                 weight = max(0,(G.out_degree(u) - k + 1)/G.out_degree(u))
-                SV[u] += weight * 1/(1+G.out_degree(v))
+                SV_out[u] += weight * 1/(1+G.out_degree(v))
+            for v in G.predecessors(u):
+                weight = max(0,(G.in_degree(u) - k + 1)/G.in_degree(u))
+                SV_in[u] += weight * 1/(1+G.in_degree(v))
 
-    return SV
+        return SV_in, SV_out
 
-# PARALLELIZATION
-def parallel_shapley_threshold(G, k=2, j=4):
+def parallel_shapley_threshold(G, j=4, k=2):
 
-    with Parallel(n_jobs=j) as parallel:
-        SV = parallel(delayed(shapley_threshold)(G, k, X) for X in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
+    if not G.is_directed():
 
-    # Merge the results
-    SV_final = {}
-    for sv in SV:
-        SV_final.update(sv)
+        with Parallel(n_jobs=j) as parallel:
+            SV = parallel(delayed(shapley_threshold)(G, k, sample) for sample in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
 
-    return SV_final
+        # Merge the results
+        SV_final = {}
+        for sv in SV:
+            SV_final.update(sv)
+
+        return SV_final
+    
+    else:
+
+        with Parallel(n_jobs=j) as parallel:
+            SV_in, SV_out = zip(*parallel(delayed(shapley_threshold)(G, k, sample) for sample in chunks(G.nodes(), math.ceil(len(G.nodes())/j))))
+
+        # Merge the results
+        SV_in_final = {}
+        for sv in SV_in:
+            SV_in_final.update(sv)
+
+        SV_out_final = {}
+        for sv in SV_out:
+            SV_out_final.update(sv)
+
+        return SV_in_final, SV_out_final
 
 if __name__ == '__main__':
 
@@ -67,11 +89,9 @@ if __name__ == '__main__':
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
     print("shapley_threshold")
-    st = shapley_threshold(G, k=2)
-    print(sorted(st.items(), key=lambda x: x[1], reverse=True))
+    print(sorted(shapley_threshold(G, k=2).items(), key=lambda x: x[1], reverse=True))
     print("parallel_shapley_threshold")
-    pst = parallel_shapley_threshold(G, k=2)
-    print(sorted(pst.items(), key=lambda x: x[1], reverse=True))
+    print(sorted(parallel_shapley_threshold(G, k=2).items(), key=lambda x: x[1], reverse=True))
 
     print("directed graph")
     G = nx.DiGraph()
@@ -85,8 +105,18 @@ if __name__ == '__main__':
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
     print("shapley_threshold")
-    st = shapley_threshold(G, k=2)
-    print(sorted(st.items(), key=lambda x: x[1], reverse=True))
+    print("in")
+    st_in = shapley_threshold(G, k=2)[0]
+    print(sorted(st_in.items(), key=lambda x: x[1], reverse=True))
+    print("out")
+    st_out = shapley_threshold(G, k=2)[1]
+    print(sorted(st_out.items(), key=lambda x: x[1], reverse=True))
+
     print("parallel_shapley_threshold")
-    pst = parallel_shapley_threshold(G, k=2)
-    print(sorted(pst.items(), key=lambda x: x[1], reverse=True))
+    print("in")
+    pst_in = parallel_shapley_threshold(G, k=2)[0]
+    print(sorted(pst_in.items(), key=lambda x: x[1], reverse=True))
+    print("out")
+    pst_out = parallel_shapley_threshold(G, k=2)[1]
+    print(sorted(pst_out.items(), key=lambda x: x[1], reverse=True))
+

@@ -4,7 +4,6 @@ sys.path.insert(0, parent_dir)
 
 import networkx as nx
 import math
-import itertools as it
 from joblib import Parallel, delayed
 from utilities.parallel_algorithms import chunks
 
