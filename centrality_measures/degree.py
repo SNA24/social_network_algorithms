@@ -1,13 +1,12 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 import networkx as nx
 import math
 import itertools as it
 from joblib import Parallel, delayed
-
-#Utility used for split a vector data in chunks of the given size.
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
+from utilities.parallel_algorithms import chunks
 
 #The measure associated to each node is exactly its degree
 def degree(G, sample=None):
@@ -19,10 +18,6 @@ def degree(G, sample=None):
         return {u:G.in_degree(u) for u in sample}, {u:G.out_degree(u) for u in sample}
 
     return {u:G.degree(u) for u in sample}
-
-# 1. DIVIDE THE GRAPH IN CHUNKS
-# 2. FOR EACH CHUNK, COMPUTE THE DEGREE OF EACH NODE
-# 3. AGGREGATE THE RESULTS
 
 def parallel_degree(G, j):
 
@@ -68,12 +63,10 @@ if __name__ == '__main__':
 
     deg_1 = degree(G)
     deg_2 = parallel_degree(G, 7)
-    deg_3 = nx.degree_centrality(G)
 
     # print only the keys of all three centrality measures sorting by value
     print(sorted(deg_1.items(), key=lambda x: x[1]))
     print(sorted(deg_2.items(), key=lambda x: x[1]))
-    print(sorted(deg_3.items(), key=lambda x: x[1]))
 
     print("Directed graph")
     G=nx.DiGraph()
@@ -89,16 +82,12 @@ if __name__ == '__main__':
 
     in_deg_1, out_deg_1 = degree(G)
     in_deg_2, out_deg_2 = parallel_degree(G, 7)
-    in_deg_3 = nx.in_degree_centrality(G)
-    out_deg_3 = nx.out_degree_centrality(G)
 
     # print all three centrality measures sorting by value
     print(sorted(in_deg_1.items(), key=lambda x: x[1]))
     print(sorted(out_deg_1.items(), key=lambda x: x[1]))
     print(sorted(in_deg_2.items(), key=lambda x: x[1]))
     print(sorted(out_deg_2.items(), key=lambda x: x[1]))
-    print(sorted(in_deg_3.items(), key=lambda x: x[1]))
-    print(sorted(out_deg_3.items(), key=lambda x: x[1]))
 
 
 

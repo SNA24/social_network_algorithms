@@ -1,13 +1,12 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 import networkx as nx
 import math
 import itertools as it
 from joblib import Parallel, delayed
-
-#Utility used for split a vector data in chunks of the given size.
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
+from utilities.parallel_algorithms import chunks, neighbors
 
 # The measure associated to each node is the sum of the (shortest) distances of this node from each remaining node
 # It is not exactly the closeness measure, but it returns the same ranking on vertices
@@ -26,7 +25,7 @@ def closeness(G, sample=None):
         dist[u]  = 0
         while queue != []:
             v = queue.pop(0)
-            for w in G[v]:
+            for w in neighbors(G, v):
                 if w not in visited:
                     queue.append(w)
                     visited.add(w)
@@ -66,8 +65,6 @@ if __name__ == '__main__':
     print(sorted(closeness(G).items(), key=lambda x: x[1], reverse=True))
     print("Parallel closeness measure")
     print(sorted(parallel_closeness(G, 2).items(), key=lambda x: x[1], reverse=True))
-    print("networkx closeness measure")
-    print(sorted(nx.closeness_centrality(G).items(), key=lambda x: x[1], reverse=True))
 
     print("Directed graph")
     G=nx.DiGraph()
@@ -86,5 +83,3 @@ if __name__ == '__main__':
     print(sorted(closeness(G).items(), key=lambda x: x[1], reverse=True))
     print("Parallel closeness measure")
     print(sorted(parallel_closeness(G, 2).items(), key=lambda x: x[1], reverse=True))
-    print("networkx closeness measure")
-    print(sorted(nx.closeness_centrality(G).items(), key=lambda x: x[1], reverse=True))

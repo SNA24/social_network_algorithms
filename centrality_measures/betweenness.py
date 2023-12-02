@@ -1,17 +1,15 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 import networkx as nx
 import math
-import itertools as it
 import networkx as nx
 from joblib import Parallel, delayed
+from utilities.parallel_algorithms import chunks
 # Computes edge and vertex betweenness of the graph in input
 # The algorithm is quite time-consuming. Indeed, its computational complexity is O(nm).
 # Possible optimizations: parallelization, sampling
-
-#Utility used for split a vector data in chunks of the given size.
-def chunks(data, size):
-    idata=iter(data)
-    for i in range(0, len(data), size):
-        yield {k:data[k] for k in it.islice(idata, size)}
 
 def betweenness(G, sample=None):
 
@@ -92,12 +90,9 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
 
     print("betweenness")
-    # sort by value and print the vertices
     print(sorted(betweenness(G)[1].items(), key=lambda x: x[1], reverse=True))
     print("parallel_betweenness")
     print(sorted(parallel_betweenness(G)[1].items(), key=lambda x: x[1], reverse=True))
-    print("nx")
-    print(sorted(nx.betweenness_centrality(G).items(), key=lambda x: x[1], reverse=True))
 
     G = nx.DiGraph()
     G.add_edge('A', 'B')
@@ -111,9 +106,6 @@ if __name__ == '__main__':
     G.add_edge('F', 'G')
 
     print("betweenness")
-    # sort by value and print the vertices
     print(sorted(betweenness(G)[1].items(), key=lambda x: x[1], reverse=True))
     print("parallel_betweenness")
     print(sorted(parallel_betweenness(G)[1].items(), key=lambda x: x[1], reverse=True))
-    print("nx")
-    print(sorted(nx.betweenness_centrality(G).items(), key=lambda x: x[1], reverse=True))

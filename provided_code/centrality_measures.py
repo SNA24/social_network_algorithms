@@ -247,7 +247,7 @@ if __name__ == '__main__':
     print("degree")
     print(top(G, degree, 3))
     print("closeness")
-    print(top(G, closeness, 3))
+    print(top(G, closeness, 7))
     print("betweenness")
     print(top(G, btw, 7))
     print("pageRank")

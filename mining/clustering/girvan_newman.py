@@ -8,7 +8,7 @@ from utilities.priorityq import PriorityQueue
 from utilities.parallel_algorithms import connected_components
 
 # Clusters are computed by iteratively removing edges of largest betweenness
-def girman_newman(G, threshold=None):
+def girvan_newman(G, threshold=None):
     graph=G.copy() # We make a copy of the graph. In this way we will modify the copy, but not the original graph
 
     q = nx.algorithms.community.modularity(G,connected_components(graph))
@@ -39,7 +39,7 @@ def girman_newman(G, threshold=None):
 
     return connected_components(graph)
 
-def heuristic_girman_newman(G, threshold=None):
+def heuristic_girvan_newman(G, threshold=None):
 
     graph=G.copy() 
 
@@ -68,7 +68,7 @@ def heuristic_girman_newman(G, threshold=None):
 
     return connected_components(graph)
 
-def parallel_girman_newman(G, j=2, threshold=None):
+def parallel_girvan_newman(G, j=2, threshold=None):
 
     graph=G.copy() # We make a copy of the graph. In this way we will modify the copy, but not the original graph
 
@@ -91,7 +91,7 @@ def parallel_girman_newman(G, j=2, threshold=None):
 
     return connected_components(graph)
 
-def parallel_heuristic_girman_newman(G, j=2, threshold=None):
+def parallel_heuristic_girvan_newman(G, j=2, threshold=None):
     
     graph=G.copy() 
 
@@ -133,10 +133,10 @@ if __name__ == '__main__':
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
 
-    print('GIRMAN NEWMAN', girman_newman(G))
-    print('HEURISTIC GIRMAN NEWMAN', heuristic_girman_newman(G))
-    print('PARALLEL GIRMAN NEWMAN', parallel_girman_newman(G))
-    print('PARALLERL HEURISTIC GIRMAN NEWMAN', parallel_heuristic_girman_newman(G))
+    print('GIRVAN NEWMAN', girvan_newman(G))
+    print('HEURISTIC GIRVAN NEWMAN', heuristic_girvan_newman(G))
+    print('PARALLEL GIRVAN NEWMAN', parallel_girvan_newman(G))
+    print('PARALLERL HEURISTIC GIRVAN NEWMAN', parallel_heuristic_girvan_newman(G))
 
     print("DIRECTED GRAPH")
 
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     G.add_edge('E', 'F')
     G.add_edge('F', 'G')
 
-    print('GIRMAN NEWMAN', girman_newman(G))
-    print('HEURISTIC GIRMAN NEWMAN', heuristic_girman_newman(G))
-    print('PARALLEL GIRMAN NEWMAN', parallel_girman_newman(G))
-    print('PARALLERL HEURISTIC GIRMAN NEWMAN', parallel_heuristic_girman_newman(G))
+    print('GIRVAN NEWMAN', girvan_newman(G))
+    print('HEURISTIC GIRVAN NEWMAN', heuristic_girvan_newman(G))
+    print('PARALLEL GIRVAN NEWMAN', parallel_girvan_newman(G))
+    print('PARALLERL HEURISTIC GIRVAN NEWMAN', parallel_heuristic_girvan_newman(G))
