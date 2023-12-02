@@ -7,10 +7,6 @@ from itertools import product
 # G is assumed to be a directed graph
 # steps and confidence are as for pageRank
 # wa and wh are the weights that we assign to the authority value and the hub value of a node, in order to evaluate its rank
-# HITS
-# G is assumed to be a directed graph
-# steps and confidence are as for pageRank
-# wa and wh are the weights that we assign to the authority value and the hub value of a node, in order to evaluate its rank
 def hits(G, step=75, confidence=0, wa=0.5, wh=0.5):
     G = nx.DiGraph(G)
     time = 0

@@ -37,7 +37,7 @@ def page_rank(G, s=0.85, step=75, confidence=0):
                 # with probability s, I follow one of the link on the current page.
                 # So, if I am on page i with probability rank[i], at the next step I would be on page j at which i links
                 # with probability s*rank[i]*probability of following link (i,j) that is 1/out_degree(i)
-                tmp[v] += rank[u]/G.degree(u)
+                tmp[v] += rank[u]/G.out_degree(u)
                 
         # computes the difference between the old rank and the new rank and updates rank to contain the new rank
         # difference is computed in L1 norm.
@@ -90,11 +90,11 @@ def partition(G, n):
 
     nodes = list(G.nodes())
     node_to_block = {node : i for i in range(n) for node in nodes if i*len(nodes)/n <= nodes.index(node) < (i+1)*len(nodes)/n}
-    graph = [ [ {(node, G.degree(node)): set() for node in nodes if node_to_block[node] == i} for _ in range(n) ] for i in range(n)]
+    graph = [ [ {(node, G.out_degree(node)): set() for node in nodes if node_to_block[node] == i} for _ in range(n) ] for i in range(n)]
 
     for node in nodes:
         for neighbor in neighbors(G, node):
-            graph[node_to_block[node]][node_to_block[neighbor]][(node, G.degree(node))].add((neighbor, G.degree(neighbor)))
+            graph[node_to_block[node]][node_to_block[neighbor]][(node, G.out_degree(node))].add((neighbor, G.out_degree(neighbor)))
 
     return graph, node_to_block
     
