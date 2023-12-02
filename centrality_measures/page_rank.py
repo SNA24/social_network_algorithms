@@ -116,9 +116,6 @@ def update(block, s, n, rank):
 
     return tmp
 
-def sum_page_ranks(tmps, jobs, node_to_block, num_partitions, node):
-    return sum(tmps[jobs[(i, node_to_block[node])]][node] if node in tmps[jobs[(i, node_to_block[node])]].keys() else 0 for i in range(num_partitions))
-
 def parallel_page_rank(G, n_jobs=4, s=0.85, step=75, confidence=0):
 
     if not G.is_directed():
@@ -157,12 +154,10 @@ def parallel_page_rank(G, n_jobs=4, s=0.85, step=75, confidence=0):
         # Parallelize the update procedure
         with Parallel(n_jobs=n_jobs) as parallel:
             tmps = parallel(delayed(update)(graph[i][j], s, n, rank) for i in range(num_partitions) for j in range(num_partitions))
-        
-        with Parallel(n_jobs=n_jobs) as parallel:
-            aggregated_ranks = parallel(delayed(sum_page_ranks)(tmps, jobs, node_to_block, num_partitions, node) for node in G.nodes())
-
-        for idx, node in enumerate(G.nodes()):
-            tmp[node] = aggregated_ranks[idx]
+            
+        # Parallelize the sum of page ranks
+        for node in G.nodes():
+            tmp[node] = sum(tmps[jobs[(i, node_to_block[node])]][node] if node in tmps[jobs[(i, node_to_block[node])]].keys() else 0 for i in range(num_partitions))
 
         # computes the difference between the old rank and the new rank and updates rank to contain the new rank
         # difference is computed in L1 norm.
