@@ -53,7 +53,16 @@ def hits(G, step=75, confidence=0, wa=0.5, wh=0.5):
         if adiff <= confidence and hdiff <=confidence:
             done = True
 
-    return {i: wa*auth[i]+wh*hub[i] for i in G.nodes()}
+    return {i: wa*auth[i]+wh*hub[i] for i in G.nodes()}, hub, auth
+
+def hits_both(G, step=75, confidence=0, wa=0.5, wh=0.5):
+    return hits(G, step, confidence, wa, wh)[0]
+
+def hits_hubbiness(G, step=75, confidence=0):
+    return hits(G, step, confidence)[1]
+    
+def hits_authority(G, step=75, confidence=0):
+    return hits(G, step, confidence)[2]
 
 def partition(G, n):
     nodes = list(G.nodes())
@@ -73,19 +82,19 @@ def partition(G, n):
 
 def update(in_block, out_block, auth, hub):
 
-    htmp = {i: 0 for i in in_block.keys()} # it contains the new hub rank
-    atmp = {i: 0 for i in out_block.keys()} # it contains the new authority rank
+    htmp = {i: 0 for i in out_block.keys()} # it contains the new hub rank
+    atmp = {i: 0 for i in in_block.keys()} # it contains the new authority rank
 
     atot=0
-    for i in out_block.keys():
-        for u in out_block[i]:
+    for i in in_block.keys():
+        for u in in_block[i]:
             # The authority level increases as better hubs are pointing to him
             atmp[i] += hub[u]
             atot += hub[u]
 
     htot=0
-    for i in in_block.keys():
-        for u in in_block[i]:
+    for i in out_block.keys():
+        for u in out_block[i]:
             htmp[i] += auth[u] #the hubbiness value of a node is the sum over all nodes at which it points of their authority value
             htot += auth[u]
 
@@ -128,15 +137,15 @@ def parallel_hits(G, n_jobs = 4, step=75, confidence=0, wa=0.5, wh=0.5):
             for j in range(num_partitions):
                 for node in in_graph[i][j].keys():
                     htmp[node] += htmps[jobs[(i,j)]][node]
-                htot += htots[jobs[(i,j)]]
                 for node in out_graph[i][j].keys():
                     atmp[node] += atmps[jobs[(i,j)]][node]
                 atot += atots[jobs[(i,j)]]
+                htot += htots[jobs[(i,j)]]
 
         adiff = 0
         hdiff = 0
         for i in G.nodes():
-            adiff += abs(auth[i]-atmp[i] / atot)
+            adiff += abs(auth[i] - atmp[i] / atot)
             auth[i] = atmp[i] / atot
             hdiff += abs(hub[i] - htmp[i] / htot)
             hub[i] = htmp[i] / htot
@@ -144,7 +153,16 @@ def parallel_hits(G, n_jobs = 4, step=75, confidence=0, wa=0.5, wh=0.5):
         if adiff <= confidence and hdiff <=confidence:
             done = True
 
-    return {i: wa*auth[i]+wh*hub[i] for i in G.nodes()}
+    return {i: wa*auth[i]+wh*hub[i] for i in G.nodes()}, hub, auth
+
+def parallel_hits_both(G, n_jobs = 4, step=75, confidence=0):
+    return parallel_hits(G, n_jobs, step, confidence)[0]
+
+def parallel_hits_hubbiness(G, n_jobs = 4, step=75, confidence=0):
+    return parallel_hits(G, n_jobs, step, confidence)[1]
+     
+def parallel_hits_authority(G, n_jobs = 4, step=75, confidence=0):  
+    return parallel_hits(G, n_jobs, step, confidence)[2]
 
 if __name__ == "__main__":
     
@@ -164,9 +182,17 @@ if __name__ == "__main__":
     G.add_edge('F', 'G')
 
     print("HITS")
-    print(sorted(hits(G).items(), key=lambda x: x[1], reverse=True))
+    print(sorted(hits_both(G).items(), key=lambda x: x[1], reverse=True))
     print("HITS Parallel")
-    print(sorted(parallel_hits(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
+    print(sorted(parallel_hits_both(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Hubbiness")
+    print(sorted(hits_hubbiness(G).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Hubbiness Parallel")
+    print(sorted(parallel_hits_hubbiness(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Authority")
+    print(sorted(hits_authority(G).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Authority Parallel")
+    print(sorted(parallel_hits_authority(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
 
     print("Directed Graph")
     G = nx.DiGraph()
@@ -182,6 +208,14 @@ if __name__ == "__main__":
     G.add_edge('F', 'G')
 
     print("HITS")
-    print(sorted(hits(G).items(), key=lambda x: x[1], reverse=True))
+    print(sorted(hits_both(G).items(), key=lambda x: x[1], reverse=True))
     print("HITS Parallel")
-    print(sorted(parallel_hits(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
+    print(sorted(parallel_hits_both(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Hubbiness")
+    print(sorted(hits_hubbiness(G).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Hubbiness Parallel")
+    print(sorted(parallel_hits_hubbiness(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Authority")
+    print(sorted(hits_authority(G).items(), key=lambda x: x[1], reverse=True))
+    print("HITS Authority Parallel")
+    print(sorted(parallel_hits_authority(G, n_jobs=n_jobs).items(), key=lambda x: x[1], reverse=True))
