@@ -146,7 +146,7 @@ if __name__ == '__main__':
         # 'zachary': zachary,
         # 'moreno': moreno,
         # 'moreno2': moreno2,
-        # 'test_directed': test_directed,
+        'test_directed': test_directed,
         'test_undirected': test_undirected
     }
 
