@@ -35,21 +35,22 @@ def mudan(k, seller_net, reports, bids):
     allocation = { bidder : False for bidder in bids.keys() }
     payments = { bidder : 0 for bidder in bids.keys() }
 
-    tentative_payments = {}
-
     W = set() # winner set
     A = seller_net
 
     if len(A) == 0:
         return allocation, payments
     
+    valuations = PriorityQueue()
+    for bidder in A.difference(W):
+        valuations.add(bidder, -bids[bidder])
+    
     marked = set() # marked set
     # init P, potential winner set
     if len(A.difference(W)) <= k:
         P = A
     else:
-        # P := W ∪ {i_1,...,i_m′}
-        P = W.union(set([item[0] for item in sorted(bids.items(), key=lambda x: x[1], reverse=True) if item[0] in A.difference(W)][0:k]))
+        P = W.union(set([valuations.pop() for _ in range(k)]))
 
     # while the difference between P and W is different from the empty set, do
     while len(P.difference(W)) > 0:
@@ -62,32 +63,40 @@ def mudan(k, seller_net, reports, bids):
                 A = A.union(reports[unmarked_agent])
             marked.add(unmarked_agent)
 
-            # update P
-            if len(A.difference(W)) <= k:
-                P = A
-            else:
-                # P := W ∪ {i_1,...,i_m′}
-                P = W.union(set([item[0] for item in sorted(bids.items(), key=lambda x: x[1], reverse=True) if item[0] in A.difference(W)][0:k]))
+        # update P
+        if len(A.difference(W)) <= k:
+            P = A
+        else:
+            valuations = PriorityQueue()
+            for bidder in A.difference(W):
+                valuations.add(bidder, -bids[bidder])
+            P = W.union(set([valuations.pop() for _ in range(k)]))
 
         # assign a priority \sigma to each agent in P
-        sigma = { agent: len(reports[agent]) if agent in reports.keys() else 0 for agent in P }
+        sigma = PriorityQueue()
         diff_PW = P.difference(W)
+        for agent in P:
+            if agent in diff_PW:
+                sigma.add(agent, -len(reports[agent]) if agent in reports.keys() else 0)
         diff_AW = A.difference(W)
-        # take the w elementi in siff_PW with the highest priority in W
-        w = sorted(diff_PW, key=lambda x: sigma[x], reverse=True)[0]
-        W.add(w[0])
+        # add the w element in diff_PW with the highest priority in W
+        w = sigma.pop()
+        W.add(w)
         # record the tentative payment of w
-        sorted_valuation = sorted([bids[agent] for agent in diff_AW], reverse=True)
-        if len(sorted_valuation) > k:
-            tentative_payments[w] = sorted_valuation[k]
+        valuations = PriorityQueue()
+        for bidder in A.difference(W):
+            valuations.add(bidder, -bids[bidder])
+        if len(diff_AW) > k:
+            for _ in range(k-1):
+                valuations.pop()
+            try:
+                payments[w] = bids[valuations.pop()]
+            except:
+                payments[w] = 0
         else:
-            tentative_payments[w] = 0
+            payments[w] = 0
+        allocation[w] = True
         k -= 1
-
-    # determine the allocation and payment results using W and tentative payments
-    for bidder in tentative_payments.keys():
-        allocation[bidder] = True
-        payments[bidder] = tentative_payments[bidder]
 
     return allocation, payments
 
