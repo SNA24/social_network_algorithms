@@ -68,7 +68,6 @@ def vcg(k, seller_net, reports, bids):
 # test
 if __name__ == '__main__':
     
-    # test 1
     k = 4
     seller_net = {'a', 'b'}
 

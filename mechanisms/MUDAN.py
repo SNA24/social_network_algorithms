@@ -1,4 +1,8 @@
-import random
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
+from utilities.priorityq import PriorityQueue
 
 def mudan(k, seller_net, reports, bids):
     """
@@ -33,15 +37,13 @@ def mudan(k, seller_net, reports, bids):
 
     tentative_payments = {}
 
-    #seller = random.choice(list(seller_net))
-    seller = 's'
-    print("seller: ", seller)
-
     W = set() # winner set
-    A = reports[seller] if seller in reports.keys() else set() 
-    marked = set() # marked set
+    A = seller_net
+
     if len(A) == 0:
         return allocation, payments
+    
+    marked = set() # marked set
     # init P, potential winner set
     if len(A.difference(W)) <= k:
         P = A
@@ -92,12 +94,10 @@ def mudan(k, seller_net, reports, bids):
 # test
 if __name__ == '__main__':
     
-    # test 1
     k = 4
-    seller_net = {'s', 'a', 'b', 'c', 'd', 'e', 'f', 'g'}
+    seller_net = {'a', 'b'}
 
-    # dense graph
-    reports = {'s': {'a','b'}, 'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
+    reports = {'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
 
     bids = {'a': 3, 'b': 1, 'c': 1, 'd': 6, 'e': 4, 'f': 7, 'g': 5}
 
