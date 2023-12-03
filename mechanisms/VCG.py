@@ -1,28 +1,9 @@
 import sys, os
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
-import networkx as nx
 
+from utilities.auctions import reached
 from utilities.priorityq import PriorityQueue
-
-def reached(seller_net, reports):
-
-    buyers = set()
-    
-    for bidder in seller_net:
-        if bidder in reports.keys():
-            buyers.update(reports[bidder])
-
-    reached = set()
-
-    for bidder in buyers:
-        if bidder in reports.keys():
-            reached.update(reports[bidder])
-
-    buyers.update(reached)
-    buyers.update(seller_net)
-
-    return buyers
 
 def vcg(k, seller_net, reports, bids):
     """
