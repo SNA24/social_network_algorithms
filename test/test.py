@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
 from mining.diameter import diameter, parallel_diam, stream_diam
-from mining.triangles import num_triangles #, num_triangles_parallel, find_triangles_directed, find_triangles_undirected
+from mining.triangles import num_triangles, parallel_num_triangles
 from mining.clustering.girvan_newman import girvan_newman, heuristic_girvan_newman, parallel_girvan_newman, parallel_heuristic_girvan_newman
 from mining.clustering.spectral import spectral, spectral_parallel, spectral_multi_cluster, spectral_multi_cluster_parallel, spectral_multi_cluster_v2, spectral_multi_cluster_v2_parallel
 from mining.clustering.two_means import two_means, parallel_two_means
@@ -26,10 +26,8 @@ to_test_mining = {
     # diameter: False,
     # parallel_diam: True,
     # stream_diam: False,
-    # num_triangles: False,
-    # find_triangles_directed: False,
-    # find_triangles_undirected: False,
-    # num_triangles_parallel: True,
+    num_triangles: False,
+    parallel_num_triangles: True,
     # girvan_newman: False,
     # heuristic_girvan_newman: False,
     # parallel_girvan_newman: True,

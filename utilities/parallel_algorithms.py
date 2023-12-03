@@ -36,7 +36,10 @@ def chunks(data, size):
         yield {k:data[k] for k in it.islice(idata, size)}
 
 def split_list(lst, chunk_size):
-    if len(lst) == 0:
+    if len(lst) == 0 or chunk_size == 0:
         return []
     for i in range(0, len(lst), chunk_size):
-        yield lst[i:i + chunk_size]
+        if i + chunk_size <= len(lst):
+            yield lst[i:i + chunk_size]
+        else:
+            yield lst[i:]
