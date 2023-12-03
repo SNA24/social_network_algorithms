@@ -1,0 +1,95 @@
+Crisis in a Cloister network, part of the Koblenz Network Collection
+===========================================================================
+
+This directory contains the TSV and related files of the moreno_sampson network: This directed network contains ratings between monks related to a crisis in a cloister (or monastery) in New England (USA) which lead to the departure of several of the monks. This dataset aggregates several available ratings ((dis)esteem, (dis)liking, positive/negative influence, praise/blame) into only one rating, which is positive if all original ratings were positive and negative if all original ratings were negative.  If there were mixed opinions the rating has the value 0. A node represents a monk and an edge between two monks shows that the left monk rated the right monk.
+
+
+More information about the network is provided here: 
+http://konect.cc/networks/moreno_sampson
+
+Files: 
+    meta.moreno_sampson -- Metadata about the network 
+    out.moreno_sampson -- The adjacency matrix of the network in whitespace-separated values format, with one edge per line
+      The meaning of the columns in out.moreno_sampson are: 
+        First column: ID of from node 
+        Second column: ID of to node
+        Third column (if present): weight or multiplicity of edge
+        Fourth column (if present):  timestamp of edges Unix time
+        Third column: edge weight
+
+
+Use the following References for citation:
+
+@MISC{konect:2017:moreno_sampson,
+    title = {Crisis in a Cloister network dataset -- {KONECT}},
+    month = oct,
+    year = {2017},
+    url = {http://konect.cc/networks/moreno_sampson}
+}
+
+@article{konect:breiger,
+	title = {An Algorithm for Clustering Relational Data with Applications
+                  to Social Network Analysis and Comparison with
+                  Multidimensional Scaling},  
+	author = {Breiger, Ronald L. and Boorman, Scott A. and Arabie, Phipps},
+	journal = {J. of Math. Psychol.},
+	volume = {12},
+	number = {3},
+	pages = {328--383},
+	year = {1975},
+	publisher = {Elsevier},
+}
+
+@phdthesis{konect:sampson,
+	title = {Crisis in a Cloister},
+	author = {Sampson, Samuel F.},
+	year = {1969},
+	school = {Cornell Univ.},
+}
+
+@article{konect:breiger,
+	title = {An Algorithm for Clustering Relational Data with Applications
+                  to Social Network Analysis and Comparison with
+                  Multidimensional Scaling},  
+	author = {Breiger, Ronald L. and Boorman, Scott A. and Arabie, Phipps},
+	journal = {J. of Math. Psychol.},
+	volume = {12},
+	number = {3},
+	pages = {328--383},
+	year = {1975},
+	publisher = {Elsevier},
+}
+
+@phdthesis{konect:sampson,
+	title = {Crisis in a Cloister},
+	author = {Sampson, Samuel F.},
+	year = {1969},
+	school = {Cornell Univ.},
+}
+
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+

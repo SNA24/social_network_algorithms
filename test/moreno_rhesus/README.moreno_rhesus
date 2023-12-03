@@ -1,0 +1,77 @@
+Rhesus macaques network, part of the Koblenz Network Collection
+===========================================================================
+
+This directory contains the TSV and related files of the moreno_rhesus network: This directed network contains observed grooming episodes between free ranging rhesus macaques (<i>Macaca mulatta</i>) in Cayo Santiago during a two month period in 1963.  Cayo Santiago is an island off the coast of Puerto Rico, also known as Isla de los monos (Island of the monkeys).  A node represents a monkey and a directed edge A → B denotes that the rhesus macaque A groomed rhesus macaque B.  The integer edge weights indicate how often this behaviour was observed.
+
+
+More information about the network is provided here: 
+http://konect.cc/networks/moreno_rhesus
+
+Files: 
+    meta.moreno_rhesus -- Metadata about the network 
+    out.moreno_rhesus -- The adjacency matrix of the network in whitespace-separated values format, with one edge per line
+      The meaning of the columns in out.moreno_rhesus are: 
+        First column: ID of from node 
+        Second column: ID of to node
+        Third column (if present): weight or multiplicity of edge
+        Fourth column (if present):  timestamp of edges Unix time
+        Third column: edge weight
+
+
+Use the following References for citation:
+
+@MISC{konect:2017:moreno_rhesus,
+    title = {Rhesus macaques network dataset -- {KONECT}},
+    month = oct,
+    year = {2017},
+    url = {http://konect.cc/networks/moreno_rhesus}
+}
+
+@article{konect:sade,
+	title = {Sociometrics of {Macaca} mulatta {I}. Linkages and Cliques in Grooming Matrices},
+	author = {Sade, D. S.},
+	journal = {Folia Primatologica},
+	volume = {18},
+	number = {3-4},
+	pages = {196--223},
+	year = {1972},
+	publisher = {Karger},
+}
+
+@article{konect:sade,
+	title = {Sociometrics of {Macaca} mulatta {I}. Linkages and Cliques in Grooming Matrices},
+	author = {Sade, D. S.},
+	journal = {Folia Primatologica},
+	volume = {18},
+	number = {3-4},
+	pages = {196--223},
+	year = {1972},
+	publisher = {Karger},
+}
+
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+@inproceedings{konect,
+	title = {{KONECT} -- {The} {Koblenz} {Network} {Collection}},
+	author = {Jérôme Kunegis},
+	year = {2013},
+	booktitle = {Proc. Int. Conf. on World Wide Web Companion},
+	pages = {1343--1350},
+	url = {http://dl.acm.org/citation.cfm?id=2488173},
+	url_presentation = {https://www.slideshare.net/kunegis/presentationwow},
+	url_web = {http://konect.cc/},
+	url_citations = {https://scholar.google.com/scholar?cites=7174338004474749050},
+}
+
+
