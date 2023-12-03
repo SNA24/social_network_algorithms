@@ -1,3 +1,29 @@
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+import networkx as nx
+
+from utilities.priorityq import PriorityQueue
+
+def reached(seller_net, reports):
+
+    buyers = set()
+    
+    for bidder in seller_net:
+        if bidder in reports.keys():
+            buyers.update(reports[bidder])
+
+    reached = set()
+
+    for bidder in buyers:
+        if bidder in reports.keys():
+            reached.update(reports[bidder])
+
+    buyers.update(reached)
+    buyers.update(seller_net)
+
+    return buyers
+
 def vcg(k, seller_net, reports, bids):
     """
     # Parameters
@@ -25,8 +51,8 @@ def vcg(k, seller_net, reports, bids):
         the seller is paying to the bidder.
     """
 
-    allocation = {}
-    payments = {}
+    allocation = { bidder: False for bidder in bids.keys() }
+    payments = { bidder: 0 for bidder in bids.keys() }
 
     # 1. ask bidders to announce their valuations for the items
     # OK conatained in bids
@@ -35,56 +61,26 @@ def vcg(k, seller_net, reports, bids):
     # valuation of each buyer for what they get. This assignment is based on the announced valuations 
     # (since that’s all we have access to.))
 
-    sorted_bids = sorted(bids.items(), key=lambda x: x[1], reverse=True)
+    buyers = reached(seller_net, reports)
+    perfect_matching = PriorityQueue()
+    for buyer in buyers:
+        perfect_matching.add(buyer, -bids[buyer])
 
-    winners_list = [bid[0] for bid in sorted_bids]
-    # remove from winners list the nodes which are in none of the report values 
-    for winner in winners_list:
-        find = False
-        for report in reports.values():
-            if winner in report:
-                find = True
-                break
-        if not find:
-            winners_list.remove(winner)
+    # 3. Charge each buyer the appropriate VCG price; that is, if buyer j receives item i under the optimal matching, then charge buyer j a 
+    # price pij determined according to Equation p_{ij} = V_{B-j}^S - V_{B-j}^{S-i}.
+    # Here, V_{B-j}^S is the total valuation of the set of buyers B-j for the set of items S, and V_{B-j}^{S-i} is the total valuation of the
+    # set of buyers B-j for the set of items S-i, where S-i is the set of items S without item i.
 
-    print(winners_list)
+    extracted = [ perfect_matching.pop() for _ in range(min(k+1, len(buyers))) ]
+    V = -sum([ bids[bidder] for bidder in extracted[:-1] ])
+    wannabe_winner = extracted[-1]
 
-    # 3. Charge each buyer the appropriate VCG price; that is, if buyer j receives item i under the optimal matching,
-    # then charge buyer j a price pij determined according to Equation pij = sw(A-j) - sw(A-j-i) where sw(A-j) is the
-    # social welfare of the optimal matching A, A-j-i is the optimal matching that results if we remove item i from
-    # A and buyer j from A, sw(A-j) is the social welfare of the optimal matching that results if we remove buyer j
-    # from A.
-
-    for bidder in seller_net:
-
-        if bidder in winners_list[:min(k, len(winners_list))]:
-
-            allocation[bidder] = True
-
-            # compute the social welfare without the bidder but with the slot
-            sw_without_bidder = 0
-
-            for winner in winners_list[:min(k+1, len(winners_list))]:
-                if winner != bidder:
-                    sw_without_bidder += bids[winner]
-
-            # compute the social welfare without the bidder and the slot
-
-            sw_without_bidder_and_slot = 0
-
-            for winner in winners_list[:min(k, len(winners_list)-1)]:
-                if winner != bidder:
-                    print(winner)
-                    sw_without_bidder_and_slot += bids[winner]
-
-            print(sw_without_bidder, sw_without_bidder_and_slot)
-
-            payments[bidder] = sw_without_bidder - sw_without_bidder_and_slot
-
-        else :
-            allocation[bidder] = False
-            payments[bidder] = 0
+    for i in range(min(k, len(buyers))):
+        winner = extracted[i]
+        V_B_j_S = V + bids[winner] - bids[wannabe_winner]
+        V_B_j_S_i = V + bids[winner]
+        payments[winner] = V_B_j_S - V_B_j_S_i
+        allocation[winner] = True
 
     return allocation, payments
 
@@ -93,9 +89,9 @@ if __name__ == '__main__':
     
     # test 1
     k = 4
-    seller_net = {'a', 'b', 'c', 'd', 'e', 'f', 'g'}
+    seller_net = {'a', 'b'}
 
-    reports = {'a': {'b', 'c'}, 'b': {'c', 'd'}, 'd': {'e', 'f', 'g'}, 'e': {'f', 'g'}, 'f': {'g'}}
+    reports = {'a': {'b', 'c'}, 'b': {'c','d'}, 'd': {'e', 'f', 'g'}, 'e': {'f', 'g'}, 'f': {'g'}}
     bids = {'a': 10, 'b': 109, 'c': 368, 'd': 12, 'e': 56, 'f': 25, 'g': 104}
 
     allocation, payments = vcg(k, seller_net, reports, bids)

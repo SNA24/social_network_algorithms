@@ -2,6 +2,7 @@ import networkx as nx
 import os, sys, time
 import pandas as pd
 import matplotlib.pyplot as plt
+import tqdm
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
@@ -27,55 +28,57 @@ to_test_mining = {
     # parallel_diam: True,
     stream_diam: False,
     num_triangles: False,
-    parallel_num_triangles: True,
-    girvan_newman: False,
-    heuristic_girvan_newman: False,
-    parallel_girvan_newman: True,
-    parallel_heuristic_girvan_newman: True,
-    spectral: False,
-    spectral_parallel: True,
-    spectral_multi_cluster: False,
-    spectral_multi_cluster_parallel: True,
-    spectral_multi_cluster_v2: False,
-    spectral_multi_cluster_v2_parallel: True,
-    hierarchical: False,
-    parallel_hierarchical: True,
-    two_means: False,
-    parallel_two_means: True
+    # parallel_num_triangles: True,
+    # girvan_newman: False,
+    # heuristic_girvan_newman: False,
+    # parallel_girvan_newman: True,
+    # parallel_heuristic_girvan_newman: True,
+    # # spectral: False,
+    # spectral_parallel: True,
+    # # spectral_multi_cluster: False,
+    # spectral_multi_cluster_parallel: True,
+    # # spectral_multi_cluster_v2: False,
+    # spectral_multi_cluster_v2_parallel: True,
+    # # hierarchical: False,
+    # parallel_hierarchical: True,
+    # # two_means: False,
+    # parallel_two_means: True
 }
 
 to_test_cenetrality_measures = {
-    betweenness: False,
-    parallel_betweenness: True,
-    closeness: False,
+    # betweenness: False,
+    # parallel_betweenness: True,
+    # closeness: False,
     parallel_closeness: True,
-    degree: False,
+    # degree: False,
     parallel_degree: True,
-    shapley_degree: False,
+    # shapley_degree: False,
     parallel_shapley_degree: True,
-    shapley_threshold: False,
+    # shapley_threshold: False,
     parallel_shapley_threshold: True,
-    shapley_closeness: False,
+    # shapley_closeness: False,
     parallel_shapley_closeness: True,
     vote_rank: False,
-    parallel_vote_rank: True,
-    page_rank: False,
+    # parallel_vote_rank: True,
+    # page_rank: False,
     parallel_page_rank: True,
-    hits_both: False,
+    # hits_both: False,
     parallel_hits_both: True,
-    hits_authority: False,
-    parallel_hits_authority: True,
-    hits_hubbiness: False,
-    parallel_hits_hubbiness: True
+    # hits_authority: False,
+    # parallel_hits_authority: True,
+    # hits_hubbiness: False,
+    # parallel_hits_hubbiness: True
 }
 
 def test_network(G, name, to_test, topic):
 
-    num_jobs = [2, 4, 6, 8, 10, 12, 14, 16]
+    print(f'Testing {topic} on {name}...')
+
+    num_jobs = [32]
 
     dataframe = pd.DataFrame(columns=['function', 'num_jobs', 'execution_time'])
     
-    for func, parallel in to_test.items():
+    for func, parallel in tqdm.tqdm(to_test.items()):
         if parallel:
             for j in num_jobs:
                 start = time.time()
