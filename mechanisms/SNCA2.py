@@ -3,6 +3,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
 
 from utilities.priorityq2 import PriorityQueue
+from utilities.auctions import reached
 
 def compute_demand(N_prime, p_prime, bids):
     return sum(1 for agent in N_prime if bids[agent] >= p_prime)
@@ -97,13 +98,19 @@ def snca(k, seller_net, reports, bids):
         means that the bidder is paying to the seller, while a negative price means that 
         the seller is paying to the bidder.
     """
-    allocation = {bidder: False for bidder in seller_net}
-    payments = {bidder: 0 for bidder in seller_net}
+    
+    allocation = {bidder: False for bidder in set(bids.keys())}
+    payments = {bidder: 0 for bidder in set(bids.keys())}
 
     N_prime = set(seller_net)
-    p_prime = 0
+    # find the seller with seller_net in reports
+    for agent, net in reports.items():
+        if set(net).difference(seller_net) == set():
+            seller = agent
+            
+    p_prime = bids[seller]
 
-    unmarked = set(seller_net)
+    unmarked = set(bids.keys()).difference(seller)
     exhausted = set()
     
     while True:
@@ -118,7 +125,8 @@ def snca(k, seller_net, reports, bids):
         # check unmarked
         for agent in N_prime:
             if agent in unmarked and agent in exhausted:
-                N_prime = N_prime.union(set(reports[agent])) if agent in reports.keys() else N_prime
+                if agent in reports.keys():
+                    N_prime = N_prime.union(set(reports[agent]))
                 unmarked.remove(agent)
 
         # terminate
@@ -132,6 +140,8 @@ def snca(k, seller_net, reports, bids):
         # CONDITION 1 : IMPORTANT AGENTS - OVERSUPPLYING
         if len(important_agents_found) > 0 or k >= demand:
             print("CONDITION 1")
+            if priority_gamma_1 is None or len(priority_gamma_1) == 0:
+                continue
             agent = priority_gamma_1.get_with_priority()[2]
 
         # CONDITION 2 : UNDERSUPPLYING
@@ -172,13 +182,13 @@ def snca(k, seller_net, reports, bids):
 if __name__ == '__main__':
     
     # test 1
-    k = 4
+    k = 6
     seller_net = {'a', 'b'}
 
     # dense graph
-    reports = {'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
+    reports = {'s': {'a', 'b'}, 'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
 
-    bids = {'a': 3, 'b': 1, 'c': 1, 'd': 6, 'e': 4, 'f': 7, 'g': 5}
+    bids = {'s': 1, 'a': 3, 'b': 1, 'c': 1, 'd': 6, 'e': 4, 'f': 7, 'g': 5}
 
     allocation, payments = snca(k, seller_net, reports, bids)
     print(allocation)
