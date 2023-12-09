@@ -1,4 +1,7 @@
-import random
+import sys, os
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
 from utilities.priorityq2 import PriorityQueue
 
 def compute_demand(N_prime, p_prime, bids):
@@ -97,12 +100,10 @@ def snca(k, seller_net, reports, bids):
     allocation = {bidder: False for bidder in seller_net}
     payments = {bidder: 0 for bidder in seller_net}
 
-    seller = 's'
-    N_prime = set(reports[seller]) if seller in reports.keys() else set()
-    p_prime = bids[seller]
+    N_prime = set(seller_net)
+    p_prime = 0
 
     unmarked = set(seller_net)
-    unmarked.remove(seller)
     exhausted = set()
     
     while True:
@@ -172,12 +173,12 @@ if __name__ == '__main__':
     
     # test 1
     k = 4
-    seller_net = {'s', 'a', 'b', 'c', 'd', 'e', 'f', 'g'}
+    seller_net = {'a', 'b'}
 
     # dense graph
-    reports = {'s': {'a','b'}, 'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
+    reports = {'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
 
-    bids = {'s': 2, 'a': 3, 'b': 1, 'c': 1, 'd': 6, 'e': 4, 'f': 7, 'g': 5}
+    bids = {'a': 3, 'b': 1, 'c': 1, 'd': 6, 'e': 4, 'f': 7, 'g': 5}
 
     allocation, payments = snca(k, seller_net, reports, bids)
     print(allocation)

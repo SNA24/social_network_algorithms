@@ -32,22 +32,22 @@ to_test_mining = {
     # girvan_newman: False,
     # heuristic_girvan_newman: False,
     # parallel_girvan_newman: True,
-    # parallel_heuristic_girvan_newman: True,
-    # # spectral: False,
+    parallel_heuristic_girvan_newman: True,
+    # # # spectral: False,
     # spectral_parallel: True,
-    # # spectral_multi_cluster: False,
+    # # # spectral_multi_cluster: False,
     # spectral_multi_cluster_parallel: True,
-    # # spectral_multi_cluster_v2: False,
+    # # # spectral_multi_cluster_v2: False,
     # spectral_multi_cluster_v2_parallel: True,
     # # hierarchical: False,
-    # parallel_hierarchical: True,
+    parallel_hierarchical: True,
     # # two_means: False,
-    # parallel_two_means: True
+    parallel_two_means: True
 }
 
 to_test_cenetrality_measures = {
     # betweenness: False,
-    # parallel_betweenness: True,
+    parallel_betweenness: True,
     # closeness: False,
     parallel_closeness: True,
     # degree: False,
@@ -58,8 +58,8 @@ to_test_cenetrality_measures = {
     parallel_shapley_threshold: True,
     # shapley_closeness: False,
     parallel_shapley_closeness: True,
-    vote_rank: False,
-    # parallel_vote_rank: True,
+    # vote_rank: False,
+    parallel_vote_rank: True,
     # page_rank: False,
     parallel_page_rank: True,
     # hits_both: False,
@@ -74,7 +74,7 @@ def test_network(G, name, to_test, topic):
 
     print(f'Testing {topic} on {name}...')
 
-    num_jobs = [32]
+    num_jobs = [10]
 
     dataframe = pd.DataFrame(columns=['function', 'num_jobs', 'execution_time'])
     
@@ -149,8 +149,8 @@ if __name__ == '__main__':
         # 'zachary': zachary,
         # 'moreno': moreno,
         # 'moreno2': moreno2,
-        'test_directed': test_directed,
-        'test_undirected': test_undirected
+        'physics_cit_net': test_directed,
+        'large_FB': test_undirected
     }
 
     for name, G in graphs.items():
