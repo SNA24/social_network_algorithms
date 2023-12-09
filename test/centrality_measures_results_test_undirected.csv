@@ -1,0 +1,9 @@
+function,num_jobs,execution_time
+parallel_closeness,32,224.33112788200378
+parallel_degree,32,3.0767271518707275
+parallel_shapley_degree,32,3.0652410984039307
+parallel_shapley_threshold,32,3.064349889755249
+parallel_shapley_closeness,32,431.4768841266632
+vote_rank,1,587.6110620498657
+parallel_page_rank,32,44.63876295089722
+parallel_hits_both,32,46.35759401321411
