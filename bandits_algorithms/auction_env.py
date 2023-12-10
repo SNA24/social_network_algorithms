@@ -6,13 +6,26 @@ class Environment:
 
     def __init__(self, G : nx.Graph):
         self.__social_graph = G
-        self.__alive_edges = {e: random.random() < self.__social_graph.edges[e]['weight'] for e in self.__social_graph.edges}
+        
+    def set_alive_edges(self):
+        self.__alive_edges = {e: random.random() < self.__social_graph.edges[e]['weight'] for e in self.__social_graph.edges()}
 
-    def find_alive_edges(self, node):
-        return [e for e in self.__social_graph.edges(node) if e in self.__alive_edges and self.__alive_edges[e]]
+    def find_reachable_nodes(self, node):
+        reachable_nodes = []
+        for e in self.__social_graph.edges():
+            if self.__alive_edges[e] == True:
+                if self.__social_graph.is_directed():
+                    if node == e[0]:
+                        reachable_nodes.append(e[1])
+                else:
+                    if node in e:
+                        other_node = e[0] if e[0] != node else e[1]
+                        reachable_nodes.append(other_node)
+                    
+        return reachable_nodes
 
     def receive_reward(self, a_t):
-        return len(self.find_alive_edges(a_t))
+        return len(self.find_reachable_nodes(a_t))
     
 class EpsGreedy_Learner:
     # eps is a function that takes in input a time step t and returns eta_t
@@ -79,7 +92,7 @@ class UCB_Learner:
 
 if __name__ == '__main__':
     # Create a social network graph using NetworkX
-    G = nx.Graph()
+    G = nx.DiGraph()
     # Add nodes
     G.add_nodes_from([1, 2, 3, 4, 5])
     # Add edges with random weights (probability of being alive)
@@ -122,23 +135,30 @@ if __name__ == '__main__':
         cum_opt_reward = 0 #it saves the cumulative reward of the best-arm in hindsight
         #Environment
         env = Environment(G)
-        alive_edges_count = {n: env.find_alive_edges(n) for n in G.nodes()}
-        opt_a = max(alive_edges_count, key=lambda k: len(alive_edges_count[k]))
+        
         #Eps-Greedy Learner
         eps_learn = EpsGreedy_Learner(G.nodes(), env, eps, T)
         #UCB Learner
         ucb_learn = UCB_Learner(G.nodes(), env, T)
         for t in range(T):
-            #reward obtained by the optimal arm
-            cum_opt_reward += env.receive_reward(opt_a)
+
+            env.set_alive_edges()
+            reached_nodes = {n: env.find_reachable_nodes(n) for n in G.nodes()}
+            opt_a = max(reached_nodes, key=lambda k: len(reached_nodes[k]))
+            
             #reward obtained by the eps_greedy learner
             a, reward = eps_learn.play_arm()
             eps_cum_reward += reward
-            #regret of the eps_greedy learner
-            eps_regrets[n][t] = cum_opt_reward - eps_cum_reward
+            
             # reward obtained by the ucb learner
             a, reward = ucb_learn.play_arm()
             ucb_cum_reward += reward
+            
+            #reward obtained by the optimal arm
+            cum_opt_reward += env.receive_reward(opt_a)
+            
+            #regret of the eps_greedy learner
+            eps_regrets[n][t] = cum_opt_reward - eps_cum_reward
             #regret of the ucb learner
             ucb_regrets[n][t] = cum_opt_reward - ucb_cum_reward
 

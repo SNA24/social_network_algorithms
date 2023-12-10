@@ -4,6 +4,7 @@ sys.path.insert(0, parent_dir)
 
 import networkx as nx
 import math
+import random
 import networkx as nx
 from joblib import Parallel, delayed
 from utilities.parallel_algorithms import chunks
@@ -64,6 +65,38 @@ def parallel_betweenness(G, j=1):
     with Parallel(n_jobs=j) as parallel:
         # run in parallel the betweenness function on each job by passing to each job only the subset of nodes on which it works
         result = parallel(delayed(betweenness)(G, X) for X in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
+
+        # Aggregates the results
+        edge_btw = {frozenset(e):0 for e in G.edges()}
+        node_btw = {i:0 for i in G.nodes()}
+
+        for r in result:
+            for e in r[0]:
+                edge_btw[e] += r[0][e]
+            for i in r[1]:
+                node_btw[i] += r[1][i]
+
+    return edge_btw, node_btw
+
+def sampled_betweenness(G, sample_size=20000, partition=None):
+
+    if partition is None:
+        partition = G.nodes()
+        
+    if len(partition) < sample_size:
+        sample_size = len(partition)
+        
+    
+    resample = random.sample(list(partition), sample_size)
+
+    return betweenness(G, resample)
+
+def parallel_sampled_betweenness(G, sample_size=20000, j=1):
+
+    # Initialize the class Parallel with the number of available process
+    with Parallel(n_jobs=j) as parallel:
+        # run in parallel the betweenness function on each job by passing to each job only the subset of nodes on which it works
+        result = parallel(delayed(sampled_betweenness)(G, sample_size, X) for X in chunks(G.nodes(), math.ceil(len(G.nodes())/j)))
 
         # Aggregates the results
         edge_btw = {frozenset(e):0 for e in G.edges()}

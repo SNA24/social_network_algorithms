@@ -1,0 +1,3 @@
+function,num_jobs,execution_time
+sampled_parallel_girvan_newman,10,217.32282972335815
+sampled_parallel_heuristic_girvan_newman,10,10.987784385681152

@@ -9,7 +9,7 @@ sys.path.append(parent_dir)
 
 from mining.diameter import diameter, parallel_diam, stream_diam
 from mining.triangles import num_triangles, parallel_num_triangles
-from mining.clustering.girvan_newman import girvan_newman, heuristic_girvan_newman, parallel_girvan_newman, parallel_heuristic_girvan_newman
+from mining.clustering.girvan_newman import girvan_newman, heuristic_girvan_newman, parallel_girvan_newman, parallel_heuristic_girvan_newman, sampled_girvan_newman, sampled_heuristic_girvan_newman, sampled_parallel_girvan_newman, sampled_parallel_heuristic_girvan_newman
 from mining.clustering.spectral import spectral, spectral_parallel, spectral_multi_cluster, spectral_multi_cluster_parallel, spectral_multi_cluster_v2, spectral_multi_cluster_v2_parallel
 from mining.clustering.two_means import two_means, parallel_two_means
 from mining.clustering.hierarchical import hierarchical, parallel_hierarchical
@@ -26,13 +26,17 @@ from centrality_measures.HITS import hits_both, parallel_hits_both, hits_authori
 to_test_mining = {
     # diameter: False,
     # parallel_diam: True,
-    stream_diam: False,
-    num_triangles: False,
+    # stream_diam: False,
+    # num_triangles: False,
     # parallel_num_triangles: True,
     # girvan_newman: False,
     # heuristic_girvan_newman: False,
     # parallel_girvan_newman: True,
-    parallel_heuristic_girvan_newman: True,
+    # parallel_heuristic_girvan_newman: True,
+    # sampled_girvan_newman: False,
+    # sampled_heuristic_girvan_newman: False,
+    sampled_parallel_girvan_newman: True,
+    sampled_parallel_heuristic_girvan_newman: True,
     # # # spectral: False,
     # spectral_parallel: True,
     # # # spectral_multi_cluster: False,
@@ -40,9 +44,9 @@ to_test_mining = {
     # # # spectral_multi_cluster_v2: False,
     # spectral_multi_cluster_v2_parallel: True,
     # # hierarchical: False,
-    parallel_hierarchical: True,
+    # parallel_hierarchical: True,
     # # two_means: False,
-    parallel_two_means: True
+    # parallel_two_means: True
 }
 
 to_test_cenetrality_measures = {
@@ -82,12 +86,12 @@ def test_network(G, name, to_test, topic):
         if parallel:
             for j in num_jobs:
                 start = time.time()
-                name, func.__name__, func(G, j), j
+                func(G, j)
                 end = time.time()
                 dataframe = dataframe._append({'function': func.__name__, 'num_jobs': j, 'execution_time': end - start}, ignore_index=True)
         else:
             start = time.time()
-            name, func.__name__, func(G)
+            func(G)
             end = time.time()
             dataframe = dataframe._append({'function': func.__name__, 'num_jobs': 1, 'execution_time': end - start}, ignore_index=True)
         
@@ -154,8 +158,9 @@ if __name__ == '__main__':
     }
 
     for name, G in graphs.items():
+        print(name, len(G.nodes()), len(G.edges()))
         test_network(G, name, to_test_mining, 'mining')
-        test_network(G, name, to_test_cenetrality_measures, 'centrality_measures')
+        # test_network(G, name, to_test_cenetrality_measures, 'centrality_measures')
 
 
         

@@ -2,7 +2,7 @@ import sys, os
 parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(parent_dir)
 
-from centrality_measures.betweenness import betweenness, parallel_betweenness
+from centrality_measures.betweenness import betweenness, parallel_betweenness, sampled_betweenness, parallel_sampled_betweenness
 import networkx as nx
 from utilities.priorityq import PriorityQueue
 from utilities.parallel_algorithms import connected_components
@@ -118,6 +118,108 @@ def parallel_heuristic_girvan_newman(G, j=2, threshold=None):
 
     return connected_components(graph)
 
+def sampled_girvan_newman(G, sample_size=200, threshold=None):
+    
+    graph=G.copy() 
+
+    q = nx.algorithms.community.modularity(G,connected_components(graph))
+
+    done = False
+    while not done:
+
+        eb, nb = sampled_betweenness(graph, sample_size)
+        edge=tuple(max(eb, key=eb.get))
+        if graph.has_edge(edge[0],edge[1]):
+            graph.remove_edge(edge[0],edge[1])
+
+        newq = nx.algorithms.community.modularity(G,connected_components(graph))
+        if abs(newq) <= abs(q) or (threshold is not None and abs(newq) <= threshold):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+
+    return connected_components(graph)
+
+def sampled_heuristic_girvan_newman(G, sample_size=200, threshold=None):
+
+    graph=G.copy() 
+
+    q = nx.algorithms.community.modularity(G,connected_components(graph))
+
+    # A heuristic approach in this case would be to compute betweenness only once
+    # and to remove edges in decreasing order of computed betweenness.
+    eb, nb = sampled_betweenness(graph, sample_size)
+    pq = PriorityQueue()
+    for e in eb:
+        pq.add(e, -eb[e])
+
+    done = False
+    while not done:
+        
+        edge=tuple(pq.pop())
+        if graph.has_edge(edge[0],edge[1]):
+            graph.remove_edge(edge[0],edge[1])
+
+        newq = nx.algorithms.community.modularity(G,connected_components(graph))
+        if abs(newq) <= abs(q) or (threshold is not None and abs(newq) <= threshold):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+
+    return connected_components(graph)
+
+def sampled_parallel_girvan_newman(G, j=2, sample_size=200, threshold=None):
+    
+    graph=G.copy() 
+
+    q = nx.algorithms.community.modularity(G,connected_components(graph))
+
+    done = False
+    while not done:
+
+        eb, nb = parallel_sampled_betweenness(graph, sample_size, j)
+        edge=tuple(max(eb, key=eb.get))
+        if graph.has_edge(edge[0],edge[1]):
+            graph.remove_edge(edge[0],edge[1])
+
+        newq = nx.algorithms.community.modularity(G,connected_components(graph))
+        if abs(newq) <= abs(q) or (threshold is not None and abs(newq) <= threshold):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+
+    return connected_components(graph)
+
+def sampled_parallel_heuristic_girvan_newman(G, sample_size=200, j=2, threshold=None):
+    
+    graph=G.copy() 
+
+    q = nx.algorithms.community.modularity(G,connected_components(graph))
+
+    eb, nb = parallel_sampled_betweenness(graph, sample_size, j)
+    pq = PriorityQueue()
+    for e in eb:
+        pq.add(e, -eb[e])
+
+    done = False
+    while not done:
+        
+        edge=tuple(pq.pop())
+        if graph.has_edge(edge[0],edge[1]):
+            graph.remove_edge(edge[0],edge[1])
+
+        newq = nx.algorithms.community.modularity(G,connected_components(graph))
+        if abs(newq) <= abs(q) or (threshold is not None and abs(newq) <= threshold):
+            graph.add_edge(edge[0],edge[1])
+            done = True
+        else:
+            q = newq
+
+    return connected_components(graph)
+
 if __name__ == '__main__':
 
     print("UNDIRECTED GRAPH")
@@ -137,6 +239,10 @@ if __name__ == '__main__':
     print('HEURISTIC GIRVAN NEWMAN', heuristic_girvan_newman(G))
     print('PARALLEL GIRVAN NEWMAN', parallel_girvan_newman(G))
     print('PARALLERL HEURISTIC GIRVAN NEWMAN', parallel_heuristic_girvan_newman(G))
+    print('SAMPLED GIRVAN NEWMAN', sampled_girvan_newman(G))
+    print('SAMPLED HEURISTIC GIRVAN NEWMAN', sampled_heuristic_girvan_newman(G))
+    print('PARALLEL SAMPLED GIRVAN NEWMAN', sampled_parallel_girvan_newman(G))
+    print('PARALLEL SAMPLED HEURISTIC GIRVAN NEWMAN', sampled_parallel_heuristic_girvan_newman(G))
 
     print("DIRECTED GRAPH")
 
@@ -155,3 +261,8 @@ if __name__ == '__main__':
     print('HEURISTIC GIRVAN NEWMAN', heuristic_girvan_newman(G))
     print('PARALLEL GIRVAN NEWMAN', parallel_girvan_newman(G))
     print('PARALLERL HEURISTIC GIRVAN NEWMAN', parallel_heuristic_girvan_newman(G))
+    print('SAMPLED GIRVAN NEWMAN', sampled_girvan_newman(G))
+    print('SAMPLED HEURISTIC GIRVAN NEWMAN', sampled_heuristic_girvan_newman(G))
+    print('PARALLEL SAMPLED GIRVAN NEWMAN', sampled_parallel_girvan_newman(G))
+    print('PARALLEL SAMPLED HEURISTIC GIRVAN NEWMAN', sampled_parallel_heuristic_girvan_newman(G))
+    

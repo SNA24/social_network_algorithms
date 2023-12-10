@@ -1,0 +1,9 @@
+function,num_jobs,execution_time
+girvan_newman,1,0.0027790069580078125
+heuristic_girvan_newman,1,0.002608776092529297
+parallel_girvan_newman,10,0.33177900314331055
+parallel_heuristic_girvan_newman,10,0.06219220161437988
+sampled_girvan_newman,1,0.0026230812072753906
+sampled_heuristic_girvan_newman,1,0.0026171207427978516
+sampled_parallel_girvan_newman,10,0.012470006942749023
+sampled_parallel_heuristic_girvan_newman,10,0.27979207038879395
