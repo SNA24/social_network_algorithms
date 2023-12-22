@@ -138,6 +138,92 @@ def parallel_num_triangles(G, n_jobs=4):
 
     return num_triangles
 
+def clustering_coefficient(G):
+    triangles_found = {u: 0 for u in G.nodes()}
+    num_triangles = 0
+    m = nx.number_of_edges(G)
+    
+    def increment_triangles(triple):
+        for u in triple:
+            triangles_found[u] += 1
+
+    # The set of heavy hitters, that is nodes with degree at least sqrt(m)
+    # Note: the set contains at most sqrt(m) nodes, since num_heavy_hitters*sqrt(m) must be at most the sum of degrees = 2m
+    # Note: the choice of threshold sqrt(m) is the one that minimize the running time of the algorithm.
+    # A larger value of the threshold implies a faster processing of triangles containing only heavy hitters, but a slower processing of remaining triangles.
+    # A smaller value of the threshold implies the reverse.
+    heavy_hitters=set()
+    for u in G.nodes():
+        if degree(G,u) >= math.sqrt(m):
+            heavy_hitters.add(u)
+
+    # Number of triangles among heavy hitters.
+    # It considers all possible triples of heavy hitters, and it verifies if it forms a triangle.
+    # The running time is then O(sqrt(m)^3) = m*sqrt(m)
+    for triple in it.combinations(heavy_hitters,3):
+        if G.has_edge(triple[0], triple[1]) and G.has_edge(triple[1], triple[2]) and G.has_edge(triple[2], triple[0]):
+            num_triangles += 1
+            increment_triangles(triple)
+        if G.is_directed():
+            if G.has_edge(triple[1], triple[0]) and G.has_edge(triple[2], triple[1]) and G.has_edge(triple[0], triple[2]):
+                num_triangles += 1
+                increment_triangles(triple)
+
+    found = {node: dict() for node in G.nodes()}
+
+    # Number of remaining triangles.
+    # For each edge, if one of the endpoints is not an heavy hitter, verifies if there is a node in its neighborhood that forms a triangle with the other endpoint.
+    # This is essentially the naive algorithm optimized to count only ordered triangle in which the first vertex (i.e., u) is not an heavy hitter.
+    # Since the size of the neighborhood of a non heavy hitter is at most sqrt(m), the complexity is O(m*sqrt(m))
+
+    for edge in G.edges():
+        sel = less(G,edge)
+        if edge[sel] not in heavy_hitters:
+            if not G.is_directed():
+                for u in G[edge[sel]]:
+                    if less(G,[u,edge[1-sel]]) and G.has_edge(u,edge[1-sel]):
+                        num_triangles += 1
+                        increment_triangles([u,edge[1-sel],edge[sel]])
+            else:
+                # consider predecessors
+                for u in G.predecessors(edge[sel]):
+                    if G.has_edge(edge[1-sel],u):
+                        triangle = tuple(sorted([u,edge[1-sel],edge[sel]]))
+                        if triangle not in found.keys():
+                            found[triangle] = 1
+                            num_triangles += 1
+                            increment_triangles([u,edge[1-sel],edge[sel]])
+                # consider successors
+                for u in G.successors(edge[sel]):
+                    if G.has_edge(u,edge[1-sel]):
+                        triangle = tuple(sorted([u,edge[1-sel],edge[sel]]))
+                        if triangle not in found.keys():
+                            found[triangle] = 1
+                            num_triangles += 1
+                            increment_triangles([u,edge[1-sel],edge[sel]])
+                            
+    def total_degree(node):
+        if G.is_directed():
+            return G.out_degree(node) + G.in_degree(node)
+        else:
+            return G.degree(node)
+
+    # compute clustering coefficient
+    clustering_coefficient = {u: 0 for u in G.nodes()}
+    for u in G.nodes():
+        if total_degree(u) > 1:
+            if not G.is_directed():
+                clustering_coefficient[u] = 2*triangles_found[u]/(degree(G,u)*(degree(G,u)-1))
+            else:
+                clustering_coefficient[u] = triangles_found[u]/(2*total_degree(u)*(total_degree(u)-1)-2*(1/total_degree(u)))
+        else:
+            clustering_coefficient[u] = 0
+            
+    # compute average clustering coefficient
+    avg_clustering_coefficient = sum(clustering_coefficient.values())/len(clustering_coefficient)
+            
+    return clustering_coefficient, avg_clustering_coefficient
+
 if __name__ == '__main__':
 
     print("Undirected graph")
@@ -153,6 +239,8 @@ if __name__ == '__main__':
     G.add_edge('F', 'D')
 
     print("Optimized implementation", num_triangles(G))
+    print("Clustering coefficient", clustering_coefficient(G))  
+    print("NX clustering coefficient", nx.clustering(G), nx.average_clustering(G))
     print("Parallel implementation", parallel_num_triangles(G, 4))
 
     print("Directed graph")
@@ -168,6 +256,8 @@ if __name__ == '__main__':
     G.add_edge('F', 'D')
     
     print("Optimized implementation", num_triangles(G))
+    print("Clustering coefficient", clustering_coefficient(G))
+    print("NX clustering coefficient", nx.clustering(G), nx.average_clustering(G))
     print("Parallel implementation", parallel_num_triangles(G, 4))
 
     # Visualizzazione del grafo
