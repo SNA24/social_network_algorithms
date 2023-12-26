@@ -140,12 +140,13 @@ if __name__ == '__main__':
         eps_learn = EpsGreedy_Learner(G.nodes(), env, eps, T)
         #UCB Learner
         ucb_learn = UCB_Learner(G.nodes(), env, T)
+        
+        env.set_alive_edges()
+        reached_nodes = {n: env.find_reachable_nodes(n) for n in G.nodes()}
+        opt_a = max(reached_nodes, key=lambda k: len(reached_nodes[k]))
+        
         for t in range(T):
 
-            env.set_alive_edges()
-            reached_nodes = {n: env.find_reachable_nodes(n) for n in G.nodes()}
-            opt_a = max(reached_nodes, key=lambda k: len(reached_nodes[k]))
-            
             #reward obtained by the eps_greedy learner
             a, reward = eps_learn.play_arm()
             eps_cum_reward += reward
