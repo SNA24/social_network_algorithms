@@ -54,13 +54,16 @@ def vcg(k, seller_net, reports, bids):
 
     extracted = [ perfect_matching.pop() for _ in range(min(k+1, len(buyers))) ]
     V = -sum([ bids[bidder] for bidder in extracted[:-1] ])
-    wannabe_winner = extracted[-1]
+    wannabe_winner = extracted[-1] if len(extracted) > k else None
 
+    if wannabe_winner is None:
+        return allocation, payments
+        
     for i in range(min(k, len(buyers))):
         winner = extracted[i]
         V_B_j_S = V + bids[winner] - bids[wannabe_winner]
         V_B_j_S_i = V + bids[winner]
-        payments[winner] = V_B_j_S - V_B_j_S_i
+        payments[winner] =  V_B_j_S_i - V_B_j_S
         allocation[winner] = True
 
     return allocation, payments

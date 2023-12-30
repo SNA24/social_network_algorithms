@@ -114,9 +114,7 @@ def snca(k, seller_net, reports, bids):
     exhausted = set()
     
     while True:
-
-        print('k: ', k)
-
+        
         # check exhauseted
         for agent in N_prime:
             if bids[agent] < p_prime:
@@ -139,7 +137,7 @@ def snca(k, seller_net, reports, bids):
 
         # CONDITION 1 : IMPORTANT AGENTS - OVERSUPPLYING
         if len(important_agents_found) > 0 or k >= demand:
-            print("CONDITION 1")
+
             if priority_gamma_1 is None or len(priority_gamma_1) == 0:
                 continue
             agent = priority_gamma_1.get_with_priority()[2]
@@ -153,14 +151,12 @@ def snca(k, seller_net, reports, bids):
             second_critical_price, priority_gamma_1 = find_second_critical_price(change_points.copy(), N_prime, bids, k, reports, exhausted)
 
             if second_critical_price is not None and len(priority_gamma_1) > 0:
-                print("CONDITION 2.1")
+
                 p_prime = second_critical_price
                 agent = priority_gamma_1.get_with_priority()[2]
 
             # CONDITION 2.2 : first critical price exists
             else:
-
-                print("CONDITION 2.2")
 
                 first_critical_price, priority_gamma_2 = find_first_critical_price(change_points.copy(), N_prime, bids, k, reports, exhausted)
 
@@ -174,7 +170,6 @@ def snca(k, seller_net, reports, bids):
         payments[agent] = p_prime
         k -= 1
         exhausted.add(agent)
-        print("winner: ", agent, " price: ", p_prime)
 
     return allocation, payments
                 
