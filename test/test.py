@@ -13,7 +13,7 @@ from mining.clustering.girvan_newman import girvan_newman, heuristic_girvan_newm
 from mining.clustering.spectral import spectral, spectral_parallel, spectral_multi_cluster, spectral_multi_cluster_parallel, spectral_multi_cluster_v2, spectral_multi_cluster_v2_parallel
 from mining.clustering.two_means import two_means, parallel_two_means
 from mining.clustering.hierarchical import hierarchical, parallel_hierarchical
-from centrality_measures.betweenness import betweenness, parallel_betweenness
+from centrality_measures.betweenness import betweenness, parallel_betweenness, parallel_sampled_betweenness
 from centrality_measures.closeness import closeness, parallel_closeness
 from centrality_measures.degree import degree, parallel_degree
 from centrality_measures.shapley_degree import shapley_degree, parallel_shapley_degree
@@ -35,7 +35,7 @@ to_test_mining = {
     # parallel_heuristic_girvan_newman: True,
     # sampled_girvan_newman: False,
     # sampled_heuristic_girvan_newman: False,
-    sampled_parallel_girvan_newman: True,
+    # sampled_parallel_girvan_newman: True,
     sampled_parallel_heuristic_girvan_newman: True,
     # # # spectral: False,
     # spectral_parallel: True,
@@ -50,35 +50,36 @@ to_test_mining = {
 }
 
 to_test_cenetrality_measures = {
-    # betweenness: False,
-    parallel_betweenness: True,
-    # closeness: False,
-    parallel_closeness: True,
-    # degree: False,
-    parallel_degree: True,
-    # shapley_degree: False,
-    parallel_shapley_degree: True,
-    # shapley_threshold: False,
-    parallel_shapley_threshold: True,
-    # shapley_closeness: False,
-    parallel_shapley_closeness: True,
-    # vote_rank: False,
-    parallel_vote_rank: True,
-    # page_rank: False,
-    parallel_page_rank: True,
-    # hits_both: False,
-    parallel_hits_both: True,
-    # hits_authority: False,
-    # parallel_hits_authority: True,
-    # hits_hubbiness: False,
-    # parallel_hits_hubbiness: True
+    # # betweenness: False,
+    # parallel_betweenness: True,
+    parallel_sampled_betweenness: True,
+    # # closeness: False,
+    # parallel_closeness: True,
+    # # # degree: False,
+    # parallel_degree: True,
+    # # # shapley_degree: False,
+    # parallel_shapley_degree: True,
+    # # # shapley_threshold: False,
+    # parallel_shapley_threshold: True,
+    # # # shapley_closeness: False,
+    # parallel_shapley_closeness: True,
+    # # # vote_rank: False,
+    # # parallel_vote_rank: True,
+    # # # page_rank: False,
+    # parallel_page_rank: True,
+    # # # hits_both: False,
+    # parallel_hits_both: True,
+    # # hits_authority: False,
+    # # parallel_hits_authority: True,
+    # # hits_hubbiness: False,
+    # # parallel_hits_hubbiness: True
 }
 
 def test_network(G, name, to_test, topic):
 
     print(f'Testing {topic} on {name}...')
 
-    num_jobs = [10]
+    num_jobs = [4]
 
     dataframe = pd.DataFrame(columns=['function', 'num_jobs', 'execution_time'])
     
@@ -95,66 +96,80 @@ def test_network(G, name, to_test, topic):
             end = time.time()
             dataframe = dataframe._append({'function': func.__name__, 'num_jobs': 1, 'execution_time': end - start}, ignore_index=True)
         
-    dataframe.to_csv(f'test/{topic}_results_{name}.csv', index=False)
+    dataframe.to_csv(os.getcwd()+f'/{topic}_results_{name}.csv', index=False)
 
 if __name__ == '__main__':
+    
+    # print path
+    path = os.getcwd()
+    print(path)
+    
+    # set current working directory to the path of the file
+    os.chdir(path+'/social_network_algorithms/test')
+    # print current working directory
+    print(os.getcwd())
 
-    zachary = nx.Graph()
-    with open('test/ucidata-zachary/out.ucidata-zachary') as f:
-        lines = f.readlines()
-        lines = lines[2:]
-        for line in lines:
-            line = line.strip().split(' ')
-            from_node = line[0]
-            to_node = line[1]
-            zachary.add_edge(from_node, to_node)
+    # zachary = nx.Graph()
+    # with open('test/ucidata-zachary/out.ucidata-zachary') as f:
+    #     lines = f.readlines()
+    #     lines = lines[2:]
+    #     for line in lines:
+    #         line = line.strip().split(' ')
+    #         from_node = line[0]
+    #         to_node = line[1]
+    #         zachary.add_edge(from_node, to_node)
 
-    moreno = nx.DiGraph()
-    with open('test/moreno_rhesus/out.moreno_rhesus_rhesus') as f:
-        lines = f.readlines()
-        lines = lines[2:]
-        for line in lines:
-            line = line.strip().split(' ')
-            from_node = line[0]
-            to_node = line[1]
-            moreno.add_edge(from_node, to_node)
+    # moreno = nx.DiGraph()
+    # with open('test/moreno_rhesus/out.moreno_rhesus_rhesus') as f:
+    #     lines = f.readlines()
+    #     lines = lines[2:]
+    #     for line in lines:
+    #         line = line.strip().split(' ')
+    #         from_node = line[0]
+    #         to_node = line[1]
+    #         moreno.add_edge(from_node, to_node)
 
-    moreno2 = nx.DiGraph()
-    with open('test/moreno_sampson/out.moreno_sampson_sampson') as f:
-        lines = f.readlines()
-        lines = lines[2:]
-        for line in lines:
-            line = line.strip().split(' ')
-            from_node = line[0]
-            to_node = line[1]
-            moreno2.add_edge(from_node, to_node)
+    # moreno2 = nx.DiGraph()
+    # with open('test/moreno_sampson/out.moreno_sampson_sampson') as f:
+    #     lines = f.readlines()
+    #     lines = lines[2:]
+    #     for line in lines:
+    #         line = line.strip().split(' ')
+    #         from_node = line[0]
+    #         to_node = line[1]
+    #         moreno2.add_edge(from_node, to_node)
 
-    test_directed = nx.DiGraph()
-    with open('test/citation-net/Cit-HepTh.txt') as f:
-        lines = f.readlines()
-        lines = lines[4:]
-        for line in lines:
-            line = line.strip().split('\t')
-            from_node = line[0]
-            to_node = line[1]
-            test_directed.add_edge(from_node, to_node)
+    # test_directed = nx.DiGraph()
+    # with open('citation-net/Cit-HepTh.txt') as f:
+    #     lines = f.readlines()
+    #     lines = lines[4:]
+    #     for line in lines:
+    #         line = line.strip().split('\t')
+    #         from_node = line[0]
+    #         to_node = line[1]
+    #         test_directed.add_edge(from_node, to_node)
 
-    test_undirected = nx.Graph()
-    with open('test/facebook-large/musae_facebook_edges.csv') as f:
-        lines = f.readlines()
-        lines = lines[1:]
-        for line in lines:
-            line = line.strip().split(',')
-            from_node = line[0]
-            to_node = line[1]
-            test_undirected.add_edge(from_node, to_node)
+    # test_undirected = nx.Graph()
+    # with open('facebook-large/musae_facebook_edges.csv') as f:
+    #     lines = f.readlines()
+    #     lines = lines[1:]
+    #     for line in lines:
+    #         line = line.strip().split(',')
+    #         from_node = line[0]
+    #         to_node = line[1]
+    #         test_undirected.add_edge(from_node, to_node)
+            
+    net = nx.read_edgelist('net_2', delimiter=' ', nodetype=int)
+    
+    print('Graphs loaded')
 
     graphs = {
         # 'zachary': zachary,
         # 'moreno': moreno,
         # 'moreno2': moreno2,
-        'physics_cit_net': test_directed,
-        'large_FB': test_undirected
+        # 'physics_cit_net': test_directed,
+        # 'large_FB': test_undirected,
+        'net': net
     }
 
     for name, G in graphs.items():

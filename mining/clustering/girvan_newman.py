@@ -193,13 +193,14 @@ def sampled_parallel_girvan_newman(G, j=2, sample_size=200, threshold=None):
 
     return connected_components(graph)
 
-def sampled_parallel_heuristic_girvan_newman(G, sample_size=200, j=2, threshold=None):
+def sampled_parallel_heuristic_girvan_newman(G, j=2, sample_size=2, threshold=None):
     
     graph=G.copy() 
 
     q = nx.algorithms.community.modularity(G,connected_components(graph))
 
-    eb, nb = parallel_sampled_betweenness(graph, sample_size, j)
+    eb, nb = parallel_sampled_betweenness(graph, j, sample_size)
+
     pq = PriorityQueue()
     for e in eb:
         pq.add(e, -eb[e])
@@ -218,7 +219,11 @@ def sampled_parallel_heuristic_girvan_newman(G, sample_size=200, j=2, threshold=
         else:
             q = newq
 
-    return connected_components(graph)
+    cc = connected_components(graph)
+    
+    print(len(cc))
+    
+    return cc
 
 if __name__ == '__main__':
 
