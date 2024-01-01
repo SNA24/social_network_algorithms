@@ -103,14 +103,9 @@ def snca(k, seller_net, reports, bids):
     payments = {bidder: 0 for bidder in set(bids.keys())}
 
     N_prime = set(seller_net)
-    # find the seller with seller_net in reports
-    for agent, net in reports.items():
-        if set(net).difference(seller_net) == set():
-            seller = agent
-            
-    p_prime = bids[seller]
+    p_prime = 1
 
-    unmarked = set(bids.keys()).difference(seller)
+    unmarked = set(bids.keys())
     exhausted = set()
     
     while True:
@@ -161,7 +156,7 @@ def snca(k, seller_net, reports, bids):
                 first_critical_price, priority_gamma_2 = find_first_critical_price(change_points.copy(), N_prime, bids, k, reports, exhausted)
 
                 p_prime = first_critical_price
-                if len(priority_gamma_2) > 0:
+                if priority_gamma_2 is not None and len(priority_gamma_2) > 0:
                     agent = priority_gamma_2.get_with_priority()[2]
                 else:
                     break
