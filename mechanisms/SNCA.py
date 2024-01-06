@@ -3,7 +3,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
 
 from utilities.priorityq2 import PriorityQueue
-from utilities.auctions import reached
+import random
 
 def compute_demand(N_prime, p_prime, bids):
     return sum(1 for agent in N_prime if bids[agent] >= p_prime)
@@ -103,7 +103,7 @@ def snca(k, seller_net, reports, bids):
     payments = {bidder: 0 for bidder in set(bids.keys())}
 
     N_prime = set(seller_net)
-    p_prime = 1
+    p_prime = random.randint(1, 50)
 
     unmarked = set(bids.keys())
     exhausted = set()
