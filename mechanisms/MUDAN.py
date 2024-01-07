@@ -31,6 +31,8 @@ def mudan(k, seller_net, reports, bids):
         the seller is paying to the bidder.
     """
     # Implement the MUDAN mechanism based on Fang et al. (2023) or your specific algorithm
+    
+    print("------------------")
 
     allocation = { bidder : False for bidder in bids.keys() }
     payments = { bidder : 0 for bidder in bids.keys() }
@@ -90,11 +92,15 @@ def mudan(k, seller_net, reports, bids):
             for _ in range(k-1):
                 valuations.pop()
             try:
+                print("valuations1", valuations)
                 payments[w] = bids[valuations.pop()]
             except:
+                print("valuations2", valuations)
                 payments[w] = 0
         else:
+            print("valuations3", valuations)
             payments[w] = 0
+        print("payments[w]", payments[w])
         allocation[w] = True
         k -= 1
 
