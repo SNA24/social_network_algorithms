@@ -24,55 +24,55 @@ from centrality_measures.page_rank import page_rank, parallel_page_rank
 from centrality_measures.HITS import hits_both, parallel_hits_both, hits_authority, parallel_hits_authority, hits_hubbiness, parallel_hits_hubbiness
 
 to_test_mining = {
-    # diameter: False,
-    # parallel_diam: True,
-    # stream_diam: False,
-    # num_triangles: False,
-    # parallel_num_triangles: True,
-    # girvan_newman: False,
-    # heuristic_girvan_newman: False,
-    # parallel_girvan_newman: True,
-    # parallel_heuristic_girvan_newman: True,
-    # sampled_girvan_newman: False,
-    # sampled_heuristic_girvan_newman: False,
-    # sampled_parallel_girvan_newman: True,
+    diameter: False,
+    parallel_diam: True,
+    stream_diam: False,
+    num_triangles: False,
+    parallel_num_triangles: True,
+    girvan_newman: False,
+    heuristic_girvan_newman: False,
+    parallel_girvan_newman: True,
+    parallel_heuristic_girvan_newman: True,
+    sampled_girvan_newman: False,
+    sampled_heuristic_girvan_newman: False,
+    sampled_parallel_girvan_newman: True,
     sampled_parallel_heuristic_girvan_newman: True,
-    # # # spectral: False,
-    # spectral_parallel: True,
-    # # # spectral_multi_cluster: False,
-    # spectral_multi_cluster_parallel: True,
-    # # # spectral_multi_cluster_v2: False,
-    # spectral_multi_cluster_v2_parallel: True,
-    # # hierarchical: False,
-    # parallel_hierarchical: True,
-    # # two_means: False,
-    # parallel_two_means: True
+    spectral: False,
+    spectral_parallel: True,
+    spectral_multi_cluster: False,
+    spectral_multi_cluster_parallel: True,
+    spectral_multi_cluster_v2: False,
+    spectral_multi_cluster_v2_parallel: True,
+    hierarchical: False,
+    parallel_hierarchical: True,
+    two_means: False,
+    parallel_two_means: True
 }
 
 to_test_cenetrality_measures = {
-    # # betweenness: False,
-    # parallel_betweenness: True,
+    betweenness: False,
+    parallel_betweenness: True,
     parallel_sampled_betweenness: True,
-    # # closeness: False,
-    # parallel_closeness: True,
-    # # # degree: False,
-    # parallel_degree: True,
-    # # # shapley_degree: False,
-    # parallel_shapley_degree: True,
-    # # # shapley_threshold: False,
-    # parallel_shapley_threshold: True,
-    # # # shapley_closeness: False,
-    # parallel_shapley_closeness: True,
-    # # # vote_rank: False,
-    # # parallel_vote_rank: True,
-    # # # page_rank: False,
-    # parallel_page_rank: True,
-    # # # hits_both: False,
-    # parallel_hits_both: True,
-    # # hits_authority: False,
-    # # parallel_hits_authority: True,
-    # # hits_hubbiness: False,
-    # # parallel_hits_hubbiness: True
+    closeness: False,
+    parallel_closeness: True,
+    degree: False,
+    parallel_degree: True,
+    shapley_degree: False,
+    parallel_shapley_degree: True,
+    shapley_threshold: False,
+    parallel_shapley_threshold: True,
+    shapley_closeness: False,
+    parallel_shapley_closeness: True,
+    vote_rank: False,
+    parallel_vote_rank: True,
+    page_rank: False,
+    parallel_page_rank: True,
+    hits_both: False,
+    parallel_hits_both: True,
+    hits_authority: False,
+    parallel_hits_authority: True,
+    hits_hubbiness: False,
+    parallel_hits_hubbiness: True
 }
 
 def test_network(G, name, to_test, topic):
@@ -96,7 +96,7 @@ def test_network(G, name, to_test, topic):
             end = time.time()
             dataframe = dataframe._append({'function': func.__name__, 'num_jobs': 1, 'execution_time': end - start}, ignore_index=True)
         
-    dataframe.to_csv(os.getcwd()+f'/{topic}_results_{name}.csv', index=False)
+    dataframe.to_csv(os.getcwd()+f'/results/{topic}_results_{name}.csv', index=False)
 
 if __name__ == '__main__':
     
@@ -109,73 +109,70 @@ if __name__ == '__main__':
     # print current working directory
     print(os.getcwd())
 
-    # zachary = nx.Graph()
-    # with open('test/ucidata-zachary/out.ucidata-zachary') as f:
-    #     lines = f.readlines()
-    #     lines = lines[2:]
-    #     for line in lines:
-    #         line = line.strip().split(' ')
-    #         from_node = line[0]
-    #         to_node = line[1]
-    #         zachary.add_edge(from_node, to_node)
+    zachary = nx.Graph()
+    with open('test/ucidata-zachary/out.ucidata-zachary') as f:
+        lines = f.readlines()
+        lines = lines[2:]
+        for line in lines:
+            line = line.strip().split(' ')
+            from_node = line[0]
+            to_node = line[1]
+            zachary.add_edge(from_node, to_node)
 
-    # moreno = nx.DiGraph()
-    # with open('test/moreno_rhesus/out.moreno_rhesus_rhesus') as f:
-    #     lines = f.readlines()
-    #     lines = lines[2:]
-    #     for line in lines:
-    #         line = line.strip().split(' ')
-    #         from_node = line[0]
-    #         to_node = line[1]
-    #         moreno.add_edge(from_node, to_node)
+    moreno = nx.DiGraph()
+    with open('test/moreno_rhesus/out.moreno_rhesus_rhesus') as f:
+        lines = f.readlines()
+        lines = lines[2:]
+        for line in lines:
+            line = line.strip().split(' ')
+            from_node = line[0]
+            to_node = line[1]
+            moreno.add_edge(from_node, to_node)
 
-    # moreno2 = nx.DiGraph()
-    # with open('test/moreno_sampson/out.moreno_sampson_sampson') as f:
-    #     lines = f.readlines()
-    #     lines = lines[2:]
-    #     for line in lines:
-    #         line = line.strip().split(' ')
-    #         from_node = line[0]
-    #         to_node = line[1]
-    #         moreno2.add_edge(from_node, to_node)
+    moreno2 = nx.DiGraph()
+    with open('test/moreno_sampson/out.moreno_sampson_sampson') as f:
+        lines = f.readlines()
+        lines = lines[2:]
+        for line in lines:
+            line = line.strip().split(' ')
+            from_node = line[0]
+            to_node = line[1]
+            moreno2.add_edge(from_node, to_node)
 
-    # test_directed = nx.DiGraph()
-    # with open('citation-net/Cit-HepTh.txt') as f:
-    #     lines = f.readlines()
-    #     lines = lines[4:]
-    #     for line in lines:
-    #         line = line.strip().split('\t')
-    #         from_node = line[0]
-    #         to_node = line[1]
-    #         test_directed.add_edge(from_node, to_node)
+    test_directed = nx.DiGraph()
+    with open('citation-net/Cit-HepTh.txt') as f:
+        lines = f.readlines()
+        lines = lines[4:]
+        for line in lines:
+            line = line.strip().split('\t')
+            from_node = line[0]
+            to_node = line[1]
+            test_directed.add_edge(from_node, to_node)
 
-    # test_undirected = nx.Graph()
-    # with open('facebook-large/musae_facebook_edges.csv') as f:
-    #     lines = f.readlines()
-    #     lines = lines[1:]
-    #     for line in lines:
-    #         line = line.strip().split(',')
-    #         from_node = line[0]
-    #         to_node = line[1]
-    #         test_undirected.add_edge(from_node, to_node)
-            
-    net = nx.read_edgelist('net_2', delimiter=' ', nodetype=int)
+    test_undirected = nx.Graph()
+    with open('facebook-large/musae_facebook_edges.csv') as f:
+        lines = f.readlines()
+        lines = lines[1:]
+        for line in lines:
+            line = line.strip().split(',')
+            from_node = line[0]
+            to_node = line[1]
+            test_undirected.add_edge(from_node, to_node)
     
     print('Graphs loaded')
 
     graphs = {
-        # 'zachary': zachary,
-        # 'moreno': moreno,
-        # 'moreno2': moreno2,
-        # 'physics_cit_net': test_directed,
-        # 'large_FB': test_undirected,
-        'net': net
+        'zachary': zachary,
+        'moreno': moreno,
+        'moreno2': moreno2,
+        'physics_cit_net': test_directed,
+        'large_FB': test_undirected
     }
 
     for name, G in graphs.items():
         print(name, len(G.nodes()), len(G.edges()))
         test_network(G, name, to_test_mining, 'mining')
-        # test_network(G, name, to_test_cenetrality_measures, 'centrality_measures')
+        test_network(G, name, to_test_cenetrality_measures, 'centrality_measures')
 
 
         
