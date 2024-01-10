@@ -63,7 +63,7 @@ def handle_important_agents(N, p, important_agents, allocation, payments, k, exh
 def check_oversupplying_market(N, p, bids, allocation, k):
     return sum(demand(N, p, bids, allocation, agent) for agent in N) < k
 
-def handle_oversupplying_market(N, p, bids, allocation, payments, k, exhausted):
+def handle_oversupplying_market(N, p, bids, reports, allocation, payments, k, exhausted):
     important_agents = PriorityQueue()
     for agent in N:
         important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
@@ -160,7 +160,7 @@ def snca(k, seller_net, reports, bids):
 
             allocation, payments, k, N_prime, exhausted = handle_important_agents(N_prime, p_prime, pq, allocation, payments, k, exhausted)
             
-        elif check_oversupplying_market(N_prime, p_prime, bids, allocation, k):
+        elif check_oversupplying_market(N_prime, p_prime, bids, reports, allocation, k):
             
             allocation, payments, k, N_prime, exhausted = handle_oversupplying_market(N_prime, p_prime, bids, allocation, payments, k, exhausted)
 
