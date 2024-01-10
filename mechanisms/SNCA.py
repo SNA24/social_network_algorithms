@@ -43,7 +43,7 @@ def check_important_agents(N, p, bids, allocation, k, reports):
     
     return res, important_agents
 
-def handle_important_agents(N, p, reports, important_agents, allocation, payments, k, exhausted):
+def handle_important_agents(N, p, important_agents, allocation, payments, k, exhausted):
    
     if len(important_agents) == 0:
         k -= 1
@@ -67,7 +67,7 @@ def handle_oversupplying_market(N, p, bids, reports, allocation, payments, k, ex
     important_agents = PriorityQueue()
     for agent in N:
         important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
-    allocation, payments, k, N, exhausted = handle_important_agents(N, p, reports, important_agents, allocation, payments, k, exhausted)
+    allocation, payments, k, N, exhausted = handle_important_agents(N, p, important_agents, allocation, payments, k, exhausted)
     return allocation, payments, k, N, exhausted
 
 def find_i_critical_price(N, p, bids, k, allocation):
@@ -101,7 +101,7 @@ def handle_undersupplying_market(N, p, bids, allocation, payments, k, reports, e
         p = p_star_ii
         res, pq = check_important_agents(N, p+1, bids, allocation, k, reports)
         if res:
-            allocation, payments, k, N, exhausted = handle_important_agents(N, p, reports, pq, allocation, payments, k, exhausted)
+            allocation, payments, k, N, exhausted = handle_important_agents(N, p, pq, allocation, payments, k, exhausted)
         else:
             return None
     elif p_star_i is not None:
@@ -110,7 +110,7 @@ def handle_undersupplying_market(N, p, bids, allocation, payments, k, reports, e
         important_agents = PriorityQueue()
         for agent in N:
             important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
-        allocation, payments, k, N, exhausted = handle_important_agents(N, p, reports, important_agents, allocation, payments, k, exhausted)
+        allocation, payments, k, N, exhausted = handle_important_agents(N, p, important_agents, allocation, payments, k, exhausted)
 
     return N, p, allocation, payments, k, exhausted
 
@@ -158,7 +158,7 @@ def snca(k, seller_net, reports, bids):
         
         if res:
 
-            allocation, payments, k, N_prime, exhausted = handle_important_agents(N_prime, p_prime, reports, pq, allocation, payments, k, exhausted)
+            allocation, payments, k, N_prime, exhausted = handle_important_agents(N_prime, p_prime, pq, allocation, payments, k, exhausted)
             
         elif check_oversupplying_market(N_prime, p_prime, bids, allocation, k):
             
@@ -182,7 +182,7 @@ def snca(k, seller_net, reports, bids):
 if __name__ == '__main__':
     
     # test 1
-    k = 3
+    k = 6
     seller_net = {'a', 'b', 'c'}
 
     # dense graph
@@ -193,3 +193,5 @@ if __name__ == '__main__':
     allocation, payments = snca(k, seller_net, reports, bids)
     print(allocation)
     print(payments)
+
+        
