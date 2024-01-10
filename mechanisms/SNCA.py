@@ -5,72 +5,114 @@ sys.path.insert(0, parent_dir)
 from utilities.priorityq2 import PriorityQueue
 import random
 
-def compute_demand(N_prime, p_prime, bids):
-    return sum(1 for agent in N_prime if bids[agent] >= p_prime)
+MAX = 50
 
-def compute_single_demand(p_prime, bid):
-    return 1 if bid >= p_prime else 0
+def update_agents(N, p, unmarked, exhausted, reports, bids):
 
-def compute_change_points(N_prime, bids):   
-    change_points = PriorityQueue()
-    for agent in N_prime:
-        change_points.put_with_priority(bids[agent], agent)
-    return change_points
+    new_exhausted = set()
+    for agent in unmarked:
+        if bids[agent] < p:
+            new_exhausted.add(agent)
 
-def important_agents(N_prime, p_prime, bids, k, reports, exhausted):
-    priority_gamma_1 = PriorityQueue()
-    important_agents_found = set()
-    total_demand = compute_demand(N_prime, p_prime, bids)
-    for agent in N_prime:
-        single_demand = compute_single_demand(p_prime, bids[agent])
-        if total_demand - single_demand < k and k <= total_demand:
-            important_agents_found.add(agent)
-        if single_demand > 0 and agent not in exhausted:
-            priority_gamma_1.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports.keys() else 0), agent)
-    return important_agents_found, priority_gamma_1
+    # Update the sets
+    exhausted.update(new_exhausted)
+    unmarked -= new_exhausted
+    N -= new_exhausted
 
-def compute_priority_gamma_2(p_prime, p_prime_eps, N_prime, bids, reports, exhausted):
-    priority_gamma_2 = PriorityQueue()
-    for agent in N_prime:
-        single_demand = compute_single_demand(p_prime, bids[agent])
-        single_demand_eps = compute_single_demand(p_prime_eps, bids[agent])
-        if agent not in exhausted and single_demand > 0:
-            priority_gamma_2.put_with_priority((-single_demand_eps, -bids[agent], -len(reports[agent]) if agent in reports.keys() else 0), agent)
-    return priority_gamma_2
+    # Add neighbors of newly exhausted agents to N_prime
+    for agent in new_exhausted:
+        if agent in reports:
+            N.update(reports[agent])
+            
+def demand(N, p, bids, allocation, agent):
+    # Demand is 1 if the agent's bid is at least p and they have not already been allocated an item
+    return 1 if bids[agent] >= p and agent in N and allocation[agent] == False else 0
+            
+def check_important_agents(N, p, bids, allocation, k, reports):
 
-def find_first_critical_price(change_points, N_prime, bids, k, reports, exhausted):
+    D_N_p = sum(demand(N, p, bids, allocation, agent) for agent in N)
 
-    prev_tentative_p = None
-    prev_demand = None
-    value = change_points.get_with_priority()
-    while value:
-        tentative_p = value[0]
-        demand = compute_demand(N_prime, tentative_p, bids)
-        if prev_demand is not None and k >= demand and k < prev_demand:
-            return prev_tentative_p, compute_priority_gamma_2(prev_tentative_p, tentative_p, N_prime, bids, reports, exhausted)
-        prev_tentative_p = tentative_p
-        prev_demand = demand
-        value = change_points.get_with_priority()
+    important_agents = PriorityQueue()
+    res = False
+    for agent in N:
+        Di_N_p = demand(N, p, bids, allocation, agent)
+        if D_N_p - Di_N_p < k <= D_N_p:
+            res = True
+            len_agent_reports = len(reports[agent]) if agent in reports else 0
+            important_agents.put_with_priority((-bids[agent], -len_agent_reports), agent)
+    
+    return res, important_agents
 
-    return None, None
-
-def find_second_critical_price(change_points, N_prime, bids, k, reports, exhausted):
-
-    prev_tentative_p = None
-    prev_gamma_1 = None
-    value = change_points.get_with_priority()
-    while value:
-        tentative_p = value[0]
-        important_agents_found, priority_gamma_1 = important_agents(N_prime, tentative_p, bids, k, reports, exhausted)
-        if len(important_agents_found)>0 and prev_tentative_p is not None:
-            return prev_tentative_p, prev_gamma_1
-        elif len(important_agents_found)>0 and prev_tentative_p is None:
-            break
-        prev_tentative_p = tentative_p
-        prev_gamma_1 = priority_gamma_1
-        value = change_points.get_with_priority()
+def handle_important_agents(N, p, important_agents, allocation, payments, k, exhausted):
+   
+    if len(important_agents) == 0:
+        k -= 1
+        return allocation, payments, k, N, exhausted
+    
+    important_agent = important_agents.get_with_priority()[1]
+    allocation[important_agent] = True
+    payments[important_agent] = p  # Assuming the payment is the current price per item
+    k -= 1  # Update the remaining number of items
         
-    return None, None
+    N.update(reports[important_agent] if important_agent in reports and important_agent not in exhausted else set())
+    N.remove(important_agent)
+    exhausted.add(important_agent)
+
+    return allocation, payments, k, N, exhausted
+
+def check_oversupplying_market(N, p, bids, allocation, k):
+    return sum(demand(N, p, bids, allocation, agent) for agent in N) < k
+
+def handle_oversupplying_market(N, p, bids, allocation, payments, k, exhausted):
+    important_agents = PriorityQueue()
+    for agent in N:
+        important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
+    allocation, payments, k, N, exhausted = handle_important_agents(N, p, important_agents, allocation, payments, k, exhausted)
+    return allocation, payments, k, N, exhausted
+
+def find_i_critical_price(N, p, bids, k, allocation):
+    p_star = p
+    while p_star <= MAX:
+        # Increase price by a small increment ε
+        p_star += 1  # ε should be a small value
+        D_N_p_star = sum(demand(N, p_star, bids, allocation, agent) for agent in N)
+        if D_N_p_star <= k:
+            break
+    return p_star - 1  # The price just before demand drops below m
+
+def find_ii_critical_price(N, p, bids, allocation, k, reports):
+    p_star = p
+    while p_star <= MAX:
+        # Increase price by a small increment ε
+        p_star += 1  # ε should be a small value
+        if not check_important_agents(N, p_star, bids, allocation, k, reports)[0]:
+            if check_important_agents(N, p_star + 1, bids, allocation, k, reports)[0]:
+                return p_star
+    return None # The price just before demand drops below m
+
+def handle_undersupplying_market(N, p, bids, allocation, payments, k, reports, exhausted):
+    
+    p_star_ii = find_ii_critical_price(N, p, bids, allocation, k, reports)
+    p_star_i = find_i_critical_price(N, p, bids, k, allocation)
+
+
+    if p_star_ii is not None:
+        # Use priority γ1 for II-critical price
+        p = p_star_ii
+        res, pq = check_important_agents(N, p+1, bids, allocation, k, reports)
+        if res:
+            allocation, payments, k, N, exhausted = handle_important_agents(N, p, pq, allocation, payments, k, exhausted)
+        else:
+            return None
+    elif p_star_i is not None:
+        # Use priority γ2 for I-critical price
+        p = p_star_i
+        important_agents = PriorityQueue()
+        for agent in N:
+            important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
+        allocation, payments, k, N, exhausted = handle_important_agents(N, p, important_agents, allocation, payments, k, exhausted)
+
+    return N, p, allocation, payments, k, exhausted
 
 def snca(k, seller_net, reports, bids):
     """
@@ -103,69 +145,37 @@ def snca(k, seller_net, reports, bids):
     payments = {bidder: 0 for bidder in set(bids.keys())}
 
     N_prime = set(seller_net)
-    p_prime = random.randint(1, 50)
+    p_prime = random.randint(0, MAX)
 
     unmarked = set(bids.keys())
     exhausted = set()
     
-    while True:
+    while k > 0 and len(unmarked) > 0:
         
-        # check exhauseted
-        for agent in N_prime:
-            if bids[agent] < p_prime:
-                exhausted.add(agent)
+        update_agents(N_prime, p_prime, unmarked, exhausted, reports, bids)
+        
+        res, pq = check_important_agents(N_prime, p_prime, bids, allocation, k, reports)
+        
+        if res:
 
-        # check unmarked
-        for agent in N_prime:
-            if agent in unmarked and agent in exhausted:
-                if agent in reports.keys():
-                    N_prime = N_prime.union(set(reports[agent]))
-                unmarked.remove(agent)
-
-        # terminate
-        if k == 0 or (N_prime.intersection(unmarked) == set() and N_prime.intersection(exhausted) == N_prime):
-            break
-
-        # compute demand
-        important_agents_found, priority_gamma_1 = important_agents(N_prime, p_prime, bids, k, reports, exhausted)
-        demand = compute_demand(N_prime, p_prime, bids)
-
-        # CONDITION 1 : IMPORTANT AGENTS - OVERSUPPLYING
-        if len(important_agents_found) > 0 or k >= demand:
-
-            if priority_gamma_1 is None or len(priority_gamma_1) == 0:
-                continue
-            agent = priority_gamma_1.get_with_priority()[2]
-
-        # CONDITION 2 : UNDERSUPPLYING
-        else:
+            allocation, payments, k, N_prime, exhausted = handle_important_agents(N_prime, p_prime, pq, allocation, payments, k, exhausted)
             
-            # CONDITION 2.1 : second critical price exists
-            change_points = compute_change_points(N_prime, bids)
+        elif check_oversupplying_market(N_prime, p_prime, bids, allocation, k):
+            
+            allocation, payments, k, N_prime, exhausted = handle_oversupplying_market(N_prime, p_prime, bids, allocation, payments, k, exhausted)
 
-            second_critical_price, priority_gamma_1 = find_second_critical_price(change_points.copy(), N_prime, bids, k, reports, exhausted)
+        elif not check_oversupplying_market(N_prime, p_prime, bids, allocation, k):
 
-            if second_critical_price is not None and len(priority_gamma_1) > 0:
-
-                p_prime = second_critical_price
-                agent = priority_gamma_1.get_with_priority()[2]
-
-            # CONDITION 2.2 : first critical price exists
+            res = handle_undersupplying_market(N_prime, p_prime, bids, allocation, payments, k, reports, exhausted) 
+            
+            if res is None:
+                k -= 1
             else:
-
-                first_critical_price, priority_gamma_2 = find_first_critical_price(change_points.copy(), N_prime, bids, k, reports, exhausted)
-
-                p_prime = first_critical_price
-                if priority_gamma_2 is not None and len(priority_gamma_2) > 0:
-                    agent = priority_gamma_2.get_with_priority()[2]
-                else:
-                    break
-
-        allocation[agent] = True
-        payments[agent] = p_prime
-        k -= 1
-        exhausted.add(agent)
-
+                N_prime, p_prime, allocation, payments, k, exhausted = res
+                
+        else:
+            k -= 1
+                 
     return allocation, payments
                 
 # test
@@ -173,12 +183,12 @@ if __name__ == '__main__':
     
     # test 1
     k = 6
-    seller_net = {'a', 'b'}
+    seller_net = {'a', 'b', 'c'}
 
     # dense graph
-    reports = {'s': {'a', 'b'}, 'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
+    reports = {'b': {'c'}, 'c': {'d', 'e'}, 'e': {'f'}, 'f': {'g'}}
 
-    bids = {'s': 1, 'a': 3, 'b': 1, 'c': 1, 'd': 6, 'e': 4, 'f': 7, 'g': 5}
+    bids = {'a': 30, 'b': 14, 'c': 12, 'd': 16, 'e': 43, 'f': 27, 'g': 50}
 
     allocation, payments = snca(k, seller_net, reports, bids)
     print(allocation)
