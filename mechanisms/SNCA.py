@@ -36,10 +36,11 @@ def check_important_agents(N, p, bids, allocation, k, reports):
     res = False
     for agent in N:
         Di_N_p = demand(N, p, bids, allocation, agent)
-        if D_N_p - Di_N_p < k <= D_N_p:
+        if D_N_p - Di_N_p < k <= D_N_p and bids[agent] >= p:
             res = True
             len_agent_reports = len(reports[agent]) if agent in reports else 0
-            important_agents.put_with_priority((-bids[agent], -len_agent_reports), agent)
+            if bids[agent] >= p:
+                important_agents.put_with_priority((-bids[agent], -len_agent_reports), agent)
     
     return res, important_agents
 
@@ -66,7 +67,8 @@ def check_oversupplying_market(N, p, bids, allocation, k):
 def handle_oversupplying_market(N, p, bids, reports, allocation, payments, k, exhausted):
     important_agents = PriorityQueue()
     for agent in N:
-        important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
+        if bids[agent] >= p:
+            important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
     allocation, payments, k, N, exhausted = handle_important_agents(N, p, reports, important_agents, allocation, payments, k, exhausted)
     return allocation, payments, k, N, exhausted
 
@@ -109,7 +111,8 @@ def handle_undersupplying_market(N, p, bids, allocation, payments, k, reports, e
         p = p_star_i
         important_agents = PriorityQueue()
         for agent in N:
-            important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
+            if bids[agent] >= p:
+                important_agents.put_with_priority((-bids[agent], -len(reports[agent]) if agent in reports and agent not in exhausted else 0), agent)
         allocation, payments, k, N, exhausted = handle_important_agents(N, p, reports, important_agents, allocation, payments, k, exhausted)
 
     return N, p, allocation, payments, k, exhausted
