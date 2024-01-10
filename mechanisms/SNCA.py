@@ -160,9 +160,9 @@ def snca(k, seller_net, reports, bids):
 
             allocation, payments, k, N_prime, exhausted = handle_important_agents(N_prime, p_prime, pq, allocation, payments, k, exhausted)
             
-        elif check_oversupplying_market(N_prime, p_prime, bids, reports, allocation, k):
+        elif check_oversupplying_market(N_prime, p_prime, bids, allocation, k):
             
-            allocation, payments, k, N_prime, exhausted = handle_oversupplying_market(N_prime, p_prime, bids, allocation, payments, k, exhausted)
+            allocation, payments, k, N_prime, exhausted = handle_oversupplying_market(N_prime, p_prime, bids, reports, allocation, payments, k, exhausted)
 
         elif not check_oversupplying_market(N_prime, p_prime, bids, allocation, k):
 
