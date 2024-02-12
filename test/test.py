@@ -100,13 +100,10 @@ def test_network(G, name, to_test, topic):
 
 if __name__ == '__main__':
     
-    # print path
     path = os.getcwd()
     print(path)
-    
-    # set current working directory to the path of the file
+
     os.chdir(path+'/social_network_algorithms/test')
-    # print current working directory
     print(os.getcwd())
 
     zachary = nx.Graph()
